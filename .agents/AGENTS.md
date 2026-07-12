@@ -34,4 +34,5 @@ This file outlines critical development guidelines and behavioral rules that mus
   - **No Emojis as UI Icons**: Do not use emojis (e.g., 🎨, 🚀, ⚙️) as interface icons. Always prefer clean, inline SVGs (e.g., Lucide or Heroicons).
   - **Cursor Pointer**: Ensure all clickable/interactive cards, buttons, and elements have `cursor: pointer` explicitly defined.
   - **Stable Hover States**: Hover states must use smooth transitions (e.g., color/opacity transitions) and must not cause any layout shift (avoid scale transforms that push adjacent items).
+  - **No Native Alerts or Confirms**: Do not use browser-native `alert()` or `confirm()` dialogs. Instead, implement customized modal overlays and temporary toast notification panels to present user confirmations or success/error feedbacks.
 
