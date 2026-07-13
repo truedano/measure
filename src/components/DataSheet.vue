@@ -21,7 +21,7 @@
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
-          Copy Data (TSV)
+          Copy Data
         </button>
         <button 
           @click="store.clearAllWorkspaceData" 
@@ -85,14 +85,11 @@ function copyTableData() {
   const data = store.tableData;
   if (data.length === 0) return;
 
-  let tsvContent = "Image Name\tLine ID\tLength\tNote\n";
-  data.forEach((row) => {
-    tsvContent += `${row.imageName}\t${row.lineId}\t${row.lengthStr}\t${row.line.note || ''}\n`;
-  });
+  const content = data.map((row) => row.lengthStr).join('\n');
 
-  navigator.clipboard.writeText(tsvContent)
+  navigator.clipboard.writeText(content)
     .then(() => {
-      store.showToast("Measurement data copied to clipboard in TSV format!", "success");
+      store.showToast("Measurement lengths copied to clipboard!", "success");
     })
     .catch((err) => {
       console.error("Failed to copy text: ", err);
