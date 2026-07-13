@@ -51,6 +51,12 @@
             <option value="m">m</option>
             <option value="in">in</option>
           </select>
+          <span class="delete-line" @click="store.removeReferenceLine" title="Delete Reference Line">
+            <svg class="ui-icon" style="margin-left: 2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </span>
         </div>
         <div 
           v-for="(handle, handleIndex) in store.referenceLine.handles" 
