@@ -2,21 +2,36 @@
   <div id="sidebar">
     <div class="sidebar-header">
       <h3>Files & Groups</h3>
-      <label class="upload-btn">
-        <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="17 8 12 3 7 8"></polyline>
-          <line x1="12" y1="3" x2="12" y2="15"></line>
-        </svg>
-        Upload
-        <input 
-          type="file" 
-          @change="handleImage" 
-          accept="image/*" 
-          multiple 
-          style="display: none;"
+      <div class="header-actions">
+        <label class="upload-btn">
+          <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Upload
+          <input 
+            type="file" 
+            @change="handleImage" 
+            accept="image/*" 
+            multiple 
+            style="display: none;"
+          >
+        </label>
+        <button 
+          @click="store.clearAllWorkspaceData" 
+          :disabled="store.images.length === 0" 
+          class="clear-all-btn"
+          title="Clear all uploaded images and data"
         >
-      </label>
+          <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+          </svg>
+          Clear All
+        </button>
+      </div>
     </div>
 
     <!-- Folder Creation -->
@@ -413,6 +428,12 @@ function handleImage(event: Event, targetFolderId: string | null = null) {
   color: #fff;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .upload-btn {
   background: #a855f7;
   color: white;
@@ -431,6 +452,34 @@ function handleImage(event: Event, targetFolderId: string | null = null) {
 .upload-btn:hover {
   background: #9333ea;
   box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
+
+.clear-all-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.clear-all-btn:hover:not(:disabled) {
+  background: #dc2626;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.clear-all-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background: #333 !important;
+  color: #666 !important;
+  box-shadow: none !important;
 }
 
 .folder-creator {
@@ -750,3 +799,4 @@ function handleImage(event: Event, targetFolderId: string | null = null) {
   flex-shrink: 0;
 }
 </style>
+
