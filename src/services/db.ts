@@ -21,7 +21,7 @@ function getDB(): Promise<IDBDatabase> {
   });
 }
 
-export async function saveWorkspace(images: ImageWorkspace[], folders: Folder[]): Promise<void> {
+export async function saveWorkspace(images: ImageWorkspace[], folders: Folder[], currentImageId: string | null): Promise<void> {
   try {
     const db = await getDB();
     
@@ -48,6 +48,7 @@ export async function saveWorkspace(images: ImageWorkspace[], folders: Folder[])
     const dataToSave = {
       images: serializableImages,
       folders: JSON.parse(JSON.stringify(folders)),
+      currentImageId,
       updatedAt: new Date().toISOString()
     };
 
@@ -64,7 +65,7 @@ export async function saveWorkspace(images: ImageWorkspace[], folders: Folder[])
   }
 }
 
-export async function loadWorkspace(): Promise<{ images: ImageWorkspace[]; folders: Folder[] } | null> {
+export async function loadWorkspace(): Promise<{ images: ImageWorkspace[]; folders: Folder[]; currentImageId: string | null } | null> {
   try {
     const db = await getDB();
 
@@ -99,7 +100,8 @@ export async function loadWorkspace(): Promise<{ images: ImageWorkspace[]; folde
 
     return {
       images: restoredImages,
-      folders: data.folders || []
+      folders: data.folders || [],
+      currentImageId: data.currentImageId || null
     };
   } catch (err) {
     console.error('Failed to load from IndexedDB', err);

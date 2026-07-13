@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import type { ImageWorkspace, Line, ModalState, ToastState, Folder, Point } from '../types/workspace';
 import { saveWorkspace, loadWorkspace } from '../services/db';
 
@@ -18,7 +18,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   function triggerDBSync() {
     if (dbSyncTimeout) clearTimeout(dbSyncTimeout);
     dbSyncTimeout = setTimeout(() => {
-      saveWorkspace(images.value, folders.value);
+      saveWorkspace(images.value, folders.value, currentImageId.value);
     }, 300);
   }
 
@@ -39,6 +39,20 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   const currentImage = computed(() => {
     return images.value.find((img) => img.id === currentImageId.value) || null;
+  });
+
+  // Watch currentImageId to lazy load HTMLImageElement (imgObject) from serializable DB data
+  watch(currentImageId, (newId) => {
+    if (!newId) return;
+    const img = images.value.find((i) => i.id === newId);
+    if (img && !img.imgObject) {
+      const imgObj = new Image();
+      imgObj.onload = () => {
+        img.imgObject = imgObj;
+        requestCanvasUpdate();
+      };
+      imgObj.src = img.src;
+    }
   });
 
   const lines = computed({
@@ -346,8 +360,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (data) {
       folders.value = data.folders || [];
       images.value = data.images || [];
-      if (images.value.length > 0) {
-        // Find first image to switch to
+      if (data.currentImageId && images.value.some((img) => img.id === data.currentImageId)) {
+        currentImageId.value = data.currentImageId;
+      } else if (images.value.length > 0) {
         currentImageId.value = images.value[0].id;
       }
       requestCanvasUpdate();
