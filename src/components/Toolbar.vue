@@ -9,6 +9,7 @@
         <path d="m14.25 16.25 2 2"></path>
       </svg>
       <b>Measure App</b>
+      <span class="app-version">v{{ version }}</span>
     </span>
     
     <!-- Step 1: Calibration -->
@@ -80,7 +81,10 @@
 
 <script setup lang="ts">
 import { useWorkspaceStore } from '../stores/workspaceStore';
+import pkg from '../../package.json';
+
 const store = useWorkspaceStore();
+const version = pkg.version;
 </script>
 
 <style scoped>
@@ -101,6 +105,19 @@ const store = useWorkspaceStore();
   color: #00f0ff;
   font-size: 15px;
   margin-right: 10px;
+}
+
+.app-version {
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  user-select: none;
 }
 
 .step-container {
