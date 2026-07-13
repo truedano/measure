@@ -202,4 +202,35 @@ describe('useWorkspaceStore', () => {
     expect(store.folders.length).toBe(0);
     expect(store.images.length).toBe(1); // img-1 inside f2Id was deleted, only img-2 remains
   });
+
+  it('supports image sorting and Data Sheet filtering', () => {
+    const store = useWorkspaceStore();
+    const fId = store.createFolder('Group C');
+    
+    // Add 3 mock images in Group C
+    const img1: any = { id: 'img-1', name: 'A.png', lines: [{ start: { x: 0, y: 0 }, end: { x: 10, y: 0 }, handles: [] }], folderId: fId, scale: 1 };
+    const img2: any = { id: 'img-2', name: 'B.png', lines: [{ start: { x: 0, y: 0 }, end: { x: 20, y: 0 }, handles: [] }], folderId: fId, scale: 1 };
+    const img3: any = { id: 'img-3', name: 'C.png', lines: [], folderId: null, scale: 1 }; // Uncategorized
+    store.images.push(img1, img2, img3);
+
+    // Test Sorting
+    expect(store.images[0].id).toBe('img-1');
+    expect(store.images[1].id).toBe('img-2');
+    
+    // Swap img-1 down
+    store.moveImageOrder('img-1', 'down');
+    expect(store.images[0].id).toBe('img-2');
+    expect(store.images[1].id).toBe('img-1');
+
+    // Test Filtering
+    expect(store.tableData.length).toBe(2); // img-1 (1 line) + img-2 (1 line)
+
+    // Filter to Uncategorized (img-3 has no lines, so tableData should be empty)
+    store.selectedFolderFilter = 'uncategorized';
+    expect(store.tableData.length).toBe(0);
+
+    // Filter to Group C
+    store.selectedFolderFilter = fId;
+    expect(store.tableData.length).toBe(2);
+  });
 });

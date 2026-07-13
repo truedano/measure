@@ -8,6 +8,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const currentImageId = ref<string | null>(null);
   const folders = ref<Folder[]>([]);
   const mousePos = ref<Point | null>(null);
+  const selectedFolderFilter = ref<string>('all');
   
   const isAddingLine = ref(false);
   const isAddingReferenceLine = ref(false);
@@ -123,7 +124,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   const tableData = computed(() => {
     const data: any[] = [];
-    images.value.forEach((img) => {
+    const filteredImages = images.value.filter((img) => {
+      if (selectedFolderFilter.value === 'all') return true;
+      if (selectedFolderFilter.value === 'uncategorized') return !img.folderId;
+      return img.folderId === selectedFolderFilter.value;
+    });
+
+    filteredImages.forEach((img) => {
       img.lines.forEach((line, index) => {
         if (line.end) {
           const dx = line.end.x - line.start.x;
@@ -347,12 +354,45 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   }
 
+  function moveImageOrder(imageId: string, direction: 'up' | 'down') {
+    const img = images.value.find((i) => i.id === imageId);
+    if (!img) return;
+
+    const folderId = img.folderId || null;
+    const siblings = images.value.filter((i) => (i.folderId || null) === folderId);
+    const siblingIndex = siblings.findIndex((i) => i.id === imageId);
+
+    if (direction === 'up' && siblingIndex > 0) {
+      const prevSibling = siblings[siblingIndex - 1];
+      const indexCurrent = images.value.findIndex((i) => i.id === imageId);
+      const indexPrev = images.value.findIndex((i) => i.id === prevSibling.id);
+      
+      const temp = images.value[indexCurrent];
+      images.value[indexCurrent] = images.value[indexPrev];
+      images.value[indexPrev] = temp;
+
+      triggerDBSync();
+      requestCanvasUpdate();
+    } else if (direction === 'down' && siblingIndex < siblings.length - 1) {
+      const nextSibling = siblings[siblingIndex + 1];
+      const indexCurrent = images.value.findIndex((i) => i.id === imageId);
+      const indexNext = images.value.findIndex((i) => i.id === nextSibling.id);
+
+      const temp = images.value[indexCurrent];
+      images.value[indexCurrent] = images.value[indexNext];
+      images.value[indexNext] = temp;
+
+      triggerDBSync();
+      requestCanvasUpdate();
+    }
+  }
 
   return {
     images,
     currentImageId,
     folders,
     mousePos,
+    selectedFolderFilter,
     isAddingLine,
     isAddingReferenceLine,
     triggerCanvasUpdate,
@@ -386,6 +426,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     renameFolder,
     deleteFolder,
     moveImageToFolder,
-    initializeFromDB
+    initializeFromDB,
+    moveImageOrder
   };
 });

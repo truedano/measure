@@ -81,6 +81,28 @@
                 </select>
               </div>
             </div>
+            <div class="sorting-controls" @click.stop>
+              <button 
+                class="btn-sort-action" 
+                :disabled="isFirstSibling(image.id, image.folderId)" 
+                @click="store.moveImageOrder(image.id, 'up')"
+                title="Move up"
+              >
+                <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="18 15 12 9 6 15"></polyline>
+                </svg>
+              </button>
+              <button 
+                class="btn-sort-action" 
+                :disabled="isLastSibling(image.id, image.folderId)" 
+                @click="store.moveImageOrder(image.id, 'down')"
+                title="Move down"
+              >
+                <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+            </div>
             <button class="btn-delete-img" @click.stop="store.deleteImage(image.id)">
               <svg class="ui-icon" style="margin: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -178,9 +200,31 @@
                 >
                   <option value="">Move to...</option>
                   <option value="uncategorized">Uncategorized</option>
-                  <option v-for="f in store.folders" :key="f.id" :value="f.id" v-show="f.id !== folder.id">{{ f.name }}</option>
+                  <option v-for="f in store.folders.filter(x => x.id !== folder.id)" :key="f.id" :value="f.id">{{ f.name }}</option>
                 </select>
               </div>
+            </div>
+            <div class="sorting-controls" @click.stop>
+              <button 
+                class="btn-sort-action" 
+                :disabled="isFirstSibling(image.id, image.folderId)" 
+                @click="store.moveImageOrder(image.id, 'up')"
+                title="Move up"
+              >
+                <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="18 15 12 9 6 15"></polyline>
+                </svg>
+              </button>
+              <button 
+                class="btn-sort-action" 
+                :disabled="isLastSibling(image.id, image.folderId)" 
+                @click="store.moveImageOrder(image.id, 'down')"
+                title="Move down"
+              >
+                <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
             </div>
             <button class="btn-delete-img" @click.stop="store.deleteImage(image.id)">
               <svg class="ui-icon" style="margin: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -274,6 +318,18 @@ function triggerDeleteFolder(folderId: string, folderName: string) {
   } else {
     store.deleteFolder(folderId, true);
   }
+}
+
+function isFirstSibling(imageId: string, folderId: string | null = null) {
+  const key = folderId || null;
+  const siblings = store.images.filter((img) => (img.folderId || null) === key);
+  return siblings.length > 0 && siblings[0].id === imageId;
+}
+
+function isLastSibling(imageId: string, folderId: string | null = null) {
+  const key = folderId || null;
+  const siblings = store.images.filter((img) => (img.folderId || null) === key);
+  return siblings.length > 0 && siblings[siblings.length - 1].id === imageId;
 }
 
 function moveImage(event: Event, imageId: string) {
@@ -633,6 +689,42 @@ function handleImage(event: Event, targetFolderId: string | null = null) {
 
 .image-card:hover .btn-delete-img {
   opacity: 1;
+}
+
+.sorting-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.image-card:hover .sorting-controls {
+  opacity: 1;
+}
+
+.btn-sort-action {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 1px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-sort-action:hover:not(:disabled) {
+  color: #00f0ff;
+  background: rgba(0, 240, 255, 0.15);
+}
+
+.btn-sort-action:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
 }
 
 .empty-folder-info {

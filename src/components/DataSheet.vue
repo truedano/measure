@@ -11,6 +11,14 @@
         </svg>
         Measurement Data Sheet
       </h4>
+      <div class="filter-wrapper">
+        <span class="filter-label">Group:</span>
+        <select :value="store.selectedFolderFilter" @change="onFilterChange" class="filter-select">
+          <option value="all">All Groups</option>
+          <option value="uncategorized">Uncategorized</option>
+          <option v-for="f in store.folders" :key="f.id" :value="f.id">{{ f.name }}</option>
+        </select>
+      </div>
       <div class="panel-actions">
         <button 
           @click="copyTableData" 
@@ -81,6 +89,11 @@
 import { useWorkspaceStore } from '../stores/workspaceStore';
 const store = useWorkspaceStore();
 
+function onFilterChange(event: Event) {
+  const target = event.target as HTMLSelectElement;
+  store.selectedFolderFilter = target.value;
+}
+
 function copyTableData() {
   const data = store.tableData;
   if (data.length === 0) return;
@@ -124,6 +137,44 @@ function copyTableData() {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.filter-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  margin-right: 20px;
+}
+
+.filter-label {
+  font-size: 11px;
+  color: #888;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-select {
+  background: #252525;
+  border: 1px solid #444;
+  color: #ccc;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-select:hover {
+  border-color: #00f0ff;
+  color: white;
+}
+
+.filter-select:focus {
+  border-color: #00f0ff;
+  box-shadow: 0 0 5px rgba(0, 240, 255, 0.2);
 }
 
 .panel-actions {
