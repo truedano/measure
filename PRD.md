@@ -110,9 +110,35 @@ data: {
 
 ---
 
-## 5. 驗證計畫 (Validation Plan)
+## 5. 系統架構重構與部署規格 (Architecture & Deployment Specification)
+為了提升軟體的長期可擴充性、程式碼可讀性，並確保能夠流暢地一鍵部署於 Vercel 雲端平台，系統將從原本的單一 `index.html` 網頁重構為現代化的模組化前端應用程式。
+
+### 技術選型
+1. **構建工具**：使用 **Vite** 提升開發伺服器啟動與打包速度。
+2. **前端框架**：使用 **Vue 3** (Single File Component, SFC) 與 **Composition API** 進行重構。
+3. **狀態管理**：使用 **Pinia** 作為全域狀態管理中心，消除原先在單一 Vue 實例中過度複雜的 data 代理與 root 監聽。
+4. **開發語言**：使用 **TypeScript** 以靜態強型別守護複雜的 Canvas 坐標轉換與圖形結構模型。
+5. **部署平台**：支援 **Vercel** 靜態託管（自動套用 CDN 快取、自動偵測建置設定）。
+
+### 組件與模組解耦設計
+- **狀態中心 (Store)**：
+  - 建立 `workspaceStore.ts` 集中管理 `images`（多圖 workspace）、`currentImageId` 狀態與高風險操作的對話框觸發，Sidebar 與 Table 組件皆直接消費 Store。
+- **邏輯抽離 (Composables)**：
+  - 將畫布的滑鼠/觸控縮放、平移計算抽離至 `useZoomPan.ts`。
+  - 將 2D 畫布底層圖像、測量線段、手柄 (handles) 的繪製渲染抽離至 `useCanvasDraw.ts`。
+- **組件拆分 (SFC Components)**：
+  - `Toolbar.vue`：負責頂部模式切換與參數控制。
+  - `Sidebar.vue`：負責多圖片清單縮圖與刪除。
+  - `CanvasArea.vue`：負責畫布節點 DOM 渲染與繪製事件綁定。
+  - `DataSheet.vue`：負責下方數據表格展示、備註內聯編輯與 TSV 一鍵複製。
+  - `ConfirmModal.vue` / `ToastPanel.vue`：全域自訂現代化彈窗與 Toast 通知。
+
+---
+
+## 6. 驗證計畫 (Validation Plan)
 ### 手動驗證流程：
 1. **多圖載入驗證**：上傳 3 張圖片，側邊欄應正確顯示 3 張圖片縮圖。切換圖片時，中央畫布應正確更換為該張圖片，且參考線與測量線也應相應更新，不受其他圖片干擾。
-2. **比例尺獨立性驗證**：對 Image A 設置 10mm 的參考線，對 Image B 設置 50mm 的參考線。在 Image A 與 Image B 分別測量一條線段，回到 Image A 時長度應保持不變，且 A 的長度與 B 的長度應各自套用自己正確的比例尺。
+2. **比例尺獨立性驗證**：對 Image A 設置 10mm 的參考線，對 Image B 設置 50mm 的參考線。在 Image A 與 Image B 分別測量一條線段，回到 Image A 時長度應保持不變，且 A 的長度與 B 的長度應各自套用自己正確 the 比例尺。
 3. **表格即時同步驗證**：在 Image A 畫兩條線，Image B 畫一條線。下方表格應顯示 3 筆資料（2 筆屬於 Image A，1 筆屬於 Image B）。雙擊表格備註欄位輸入「寬度」，修改應被保留。
-4. **TSV 複製驗證**：點擊「複製數據」按鈕，打開 Google Sheets 或 Excel 按下 `Ctrl+V`，確認檔名、線段名稱、長度、備註能精準分列分行填入。
+4. **TSV 複製驗證**：點擊「複製數據」按鈕，確認右上角有綠色 Toast 通知升起，打開 Google Sheets 或 Excel 按下 `Ctrl+V`，確認檔名、線段名稱、長度、備註能精準分列分行填入。
+5. **Vercel 構建與部署驗證**：專案透過 Vite 打包編譯無錯誤，且能夠在 Vercel 生產環境正常運作。
