@@ -3,9 +3,11 @@
 This file outlines critical development guidelines and behavioral rules that must be strictly followed for the `measure` project.
 
 ## 1. Codebase Memory MCP Indexing
-- **Action**: Any addition, modification, or deletion of code MUST trigger an index update (by calling `index_repository`).
+- **Action**: Any addition, modification, or deletion of code MUST trigger an index update.
 - **Rule**: Always prioritize querying the project-local `codebase-memory-mcp` index (via tools like `search_graph`, `trace_path`, `get_code_snippet`, `query_graph`, `search_code`) to explore and locate codebase information. DO NOT fall back to `grep` or raw file reading tools unless the local index returns insufficient results. This is to ensure queries target the project-local database and minimize token consumption.
 - **Persistence**: The index database MUST be stored within the project directory. When calling `index_repository`, always set the parameter `persistence` to `true`. This will store the SQLite graph databases and the compressed `graph.db.zst` within the project's `.codebase-memory/` directory.
+- **Execution Mechanism**: Index updates MUST be performed by invoking the native MCP tool `index_repository` within the IDE session, rather than executing standalone terminal scripts. This ensures that the MCP server process (which locks `graph.db.zst`) handles the write operation internally, avoiding file lock access errors and guaranteeing that the compressed graph index is correctly regenerated.
+
 
 ## 2. Harness Engineering
 - **Rule**: Development must adopt **Harness Engineering** principles.
@@ -35,4 +37,8 @@ This file outlines critical development guidelines and behavioral rules that mus
   - **Cursor Pointer**: Ensure all clickable/interactive cards, buttons, and elements have `cursor: pointer` explicitly defined.
   - **Stable Hover States**: Hover states must use smooth transitions (e.g., color/opacity transitions) and must not cause any layout shift (avoid scale transforms that push adjacent items).
   - **No Native Alerts or Confirms**: Do not use browser-native `alert()` or `confirm()` dialogs. Instead, implement customized modal overlays and temporary toast notification panels to present user confirmations or success/error feedbacks.
+
+## 8. Mandatory Automated Testing
+- **Rule**: All core state, logic, scaling computations, and data transformations (such as Pinia stores and core composables) MUST have corresponding automated unit tests. Any modification, addition, or deletion of features requires the creation/updating of automated tests, and all tests must successfully pass in the local test harness (`npm run test`) before the task is considered complete and ready for deployment.
+
 
