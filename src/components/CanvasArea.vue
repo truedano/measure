@@ -65,6 +65,8 @@
     <canvas 
       ref="canvasRef" 
       @click="placeLine" 
+      @mousemove="trackMouse"
+      @mouseleave="clearMouse"
       :style="{ cursor: store.isAddingLine || store.isAddingReferenceLine ? 'crosshair' : (isPanning ? 'grabbing' : 'default') }"
       @mousedown="startPan" 
       @touchstart="startTouchPan" 
@@ -138,6 +140,22 @@ onUnmounted(() => {
   }
 });
 
+function trackMouse(e: MouseEvent) {
+  if (!store.currentImageId) return;
+  if (store.isAddingLine || store.isAddingReferenceLine) {
+    const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
+    store.mousePos = { x, y };
+    store.requestCanvasUpdate();
+  }
+}
+
+function clearMouse() {
+  if (store.mousePos) {
+    store.mousePos = null;
+    store.requestCanvasUpdate();
+  }
+}
+
 // Click to draw line
 function placeLine(e: MouseEvent) {
   if (!store.currentImageId) return;
@@ -165,6 +183,7 @@ function placeLine(e: MouseEvent) {
       currentLine.end = { x, y };
       currentLine.handles.push({ x, y });
       store.isAddingLine = false;
+      store.mousePos = null; // Clear preview
       store.requestCanvasUpdate();
     }
   } else if (store.isAddingReferenceLine) {
@@ -180,6 +199,7 @@ function placeLine(e: MouseEvent) {
       store.referenceLine.end = { x, y };
       store.referenceLine.handles.push({ x, y });
       store.isAddingReferenceLine = false;
+      store.mousePos = null; // Clear preview
       store.referenceLength = 1;
       store.updateMeasurementLabels();
     }
@@ -314,40 +334,49 @@ function getHandleStyle(handle: Point) {
 }
 
 .handle {
-  width: 10px;
-  height: 10px;
-  background: #00f0ff;
-  border: 2px solid white;
+  width: 8px;
+  height: 8px;
+  background: rgba(0, 240, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 50%;
   position: absolute;
   transform: translate(-50%, -50%);
   cursor: pointer;
   pointer-events: auto; /* Allow drag capture */
   z-index: 30;
-  box-shadow: 0 0 5px rgba(0,0,0,0.5);
-  transition: transform 0.1s;
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.8);
+  transition: transform 0.15s, background-color 0.15s;
 }
 
 .handle:hover {
-  transform: translate(-50%, -50%) scale(1.2);
+  transform: translate(-50%, -50%) scale(1.3);
+  background-color: rgba(0, 240, 255, 0.85);
 }
 
 .reference-handle {
-  background: #a855f7;
+  background: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.8);
+}
+
+.reference-handle:hover {
+  background-color: rgba(168, 85, 247, 0.85);
 }
 
 .line-length, .reference-length {
   position: absolute;
   transform: translate(-50%, -100%);
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(15, 15, 15, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: #00f0ff;
-  padding: 4px 8px;
+  padding: 3px 8px;
   border-radius: 4px;
   font-size: 11px;
+  font-family: 'Outfit', sans-serif;
   white-space: nowrap;
   pointer-events: auto; /* Allow mouse interaction for delete button */
   z-index: 25;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
   border: 1px solid rgba(0, 240, 255, 0.2);
   display: flex;
   align-items: center;

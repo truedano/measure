@@ -10,6 +10,11 @@ export interface Line {
   handles: Point[];
 }
 
+export interface Folder {
+  id: string;
+  name: string;
+}
+
 export interface ImageWorkspace {
   id: string;
   name: string;
@@ -24,6 +29,7 @@ export interface ImageWorkspace {
   zoomLevel: number;
   panX: number;
   panY: number;
+  folderId?: string | null;
 }
 
 export interface ModalState {

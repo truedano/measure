@@ -165,4 +165,41 @@ describe('useWorkspaceStore', () => {
     expect(store.toast.message).toBe("Copied!");
     expect(store.toast.type).toBe("success");
   });
+
+  it('can manage folders and group images', () => {
+    const store = useWorkspaceStore();
+    
+    // Create folders
+    const f1Id = store.createFolder('Group A');
+    const f2Id = store.createFolder('Group B');
+    expect(store.folders.length).toBe(2);
+    expect(store.folders[0].name).toBe('Group A');
+
+    // Rename folder
+    store.renameFolder(f1Id, 'Renamed Group A');
+    expect(store.folders[0].name).toBe('Renamed Group A');
+
+    // Load mock images
+    const mockImg1: any = { id: 'img-1', name: 'img1.png', lines: [], folderId: null };
+    const mockImg2: any = { id: 'img-2', name: 'img2.png', lines: [], folderId: null };
+    store.images.push(mockImg1, mockImg2);
+
+    // Relocate image
+    store.moveImageToFolder('img-1', f1Id);
+    expect(store.images[0].folderId).toBe(f1Id);
+
+    // Delete folder, keep contents (move to Uncategorized)
+    store.deleteFolder(f1Id, true);
+    expect(store.folders.length).toBe(1);
+    expect(store.images[0].folderId).toBeNull(); // Reverted to uncategorized
+
+    // Relocate to folder B
+    store.moveImageToFolder('img-1', f2Id);
+    expect(store.images[0].folderId).toBe(f2Id);
+
+    // Delete folder, delete contents
+    store.deleteFolder(f2Id, false);
+    expect(store.folders.length).toBe(0);
+    expect(store.images.length).toBe(1); // img-1 inside f2Id was deleted, only img-2 remains
+  });
 });

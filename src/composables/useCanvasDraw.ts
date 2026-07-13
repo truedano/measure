@@ -74,6 +74,57 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     line.handles[1].y = line.end.y;
   }
 
+  function drawPreviewLine(ctx: CanvasRenderingContext2D, start: Point, end: Point, color: string) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5 / store.zoomLevel;
+    ctx.setLineDash([5 / store.zoomLevel, 5 / store.zoomLevel]);
+    
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
+    
+    ctx.setLineDash([]);
+    
+    const endLength = 6;
+    const angle = Math.atan2(end.y - start.y, end.x - start.x);
+    const sinAngle = Math.sin(angle);
+    const cosAngle = Math.cos(angle);
+    
+    ctx.beginPath();
+    ctx.moveTo(start.x - endLength * sinAngle, start.y + endLength * cosAngle);
+    ctx.lineTo(start.x + endLength * sinAngle, start.y - endLength * cosAngle);
+    ctx.moveTo(end.x - endLength * sinAngle, end.y + endLength * cosAngle);
+    ctx.lineTo(end.x + endLength * sinAngle, end.y - endLength * cosAngle);
+    ctx.stroke();
+    
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const lengthStr = store.scale !== 1 
+      ? `${(length * store.scale).toFixed(2)} ${store.unit}` 
+      : `${length.toFixed(2)} px`;
+      
+    ctx.save();
+    ctx.font = `${10 / store.zoomLevel}px Outfit, Inter, sans-serif`;
+    const textWidth = ctx.measureText(lengthStr).width;
+    const midX = (start.x + end.x) / 2;
+    const midY = (start.y + end.y) / 2 - 8 / store.zoomLevel;
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.fillRect(
+      midX - textWidth / 2 - 4 / store.zoomLevel,
+      midY - 8 / store.zoomLevel,
+      textWidth + 8 / store.zoomLevel,
+      12 / store.zoomLevel
+    );
+    
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.fillText(lengthStr, midX, midY);
+    ctx.restore();
+  }
+
   function updateCanvas() {
     const canvas = canvasRef.value;
     if (!canvas) return;
@@ -107,6 +158,16 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
           drawLine(ctx, line, '#00f0ff');
         }
       });
+
+      // Draw preview dashed line if currently adding a line
+      if (store.mousePos) {
+        if (store.isAddingLine && store.lines.length > 0 && !store.lines[store.lines.length - 1].end) {
+          const activeLine = store.lines[store.lines.length - 1];
+          drawPreviewLine(ctx, activeLine.start, store.mousePos, '#00f0ff');
+        } else if (store.isAddingReferenceLine && store.referenceLine && !store.referenceLine.end) {
+          drawPreviewLine(ctx, store.referenceLine.start, store.mousePos, '#a855f7');
+        }
+      }
     }
     
     ctx.restore();

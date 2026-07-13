@@ -1,14 +1,25 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { ImageWorkspace, Line, ModalState, ToastState } from '../types/workspace';
+import type { ImageWorkspace, Line, ModalState, ToastState, Folder, Point } from '../types/workspace';
+import { saveWorkspace, loadWorkspace } from '../services/db';
 
 export const useWorkspaceStore = defineStore('workspace', () => {
   const images = ref<ImageWorkspace[]>([]);
   const currentImageId = ref<string | null>(null);
+  const folders = ref<Folder[]>([]);
+  const mousePos = ref<Point | null>(null);
   
   const isAddingLine = ref(false);
   const isAddingReferenceLine = ref(false);
   const triggerCanvasUpdate = ref(0);
+
+  let dbSyncTimeout: any = null;
+  function triggerDBSync() {
+    if (dbSyncTimeout) clearTimeout(dbSyncTimeout);
+    dbSyncTimeout = setTimeout(() => {
+      saveWorkspace(images.value, folders.value);
+    }, 300);
+  }
 
   const modal = ref<ModalState>({
     show: false,
@@ -140,6 +151,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   function requestCanvasUpdate() {
     triggerCanvasUpdate.value++;
+    triggerDBSync();
   }
 
   function switchImage(id: string) {
@@ -251,6 +263,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       "Are you sure you want to clear all loaded images and measurement data? This action cannot be undone.",
       () => {
         images.value = [];
+        folders.value = []; // Also clear folders
         currentImageId.value = null;
         isAddingLine.value = false;
         isAddingReferenceLine.value = false;
@@ -260,9 +273,86 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     );
   }
 
+  function createFolder(name: string) {
+    const newFolder: Folder = {
+      id: 'folder-' + Math.random().toString(36).substr(2, 9),
+      name
+    };
+    folders.value.push(newFolder);
+    triggerDBSync();
+    showToast(`Folder "${name}" created.`, "success");
+    return newFolder.id;
+  }
+
+  function renameFolder(id: string, name: string) {
+    const folder = folders.value.find((f) => f.id === id);
+    if (folder) {
+      const oldName = folder.name;
+      folder.name = name;
+      triggerDBSync();
+      showToast(`Folder "${oldName}" renamed to "${name}".`, "success");
+    }
+  }
+
+  function deleteFolder(id: string, keepContents = true) {
+    const index = folders.value.findIndex((f) => f.id === id);
+    if (index !== -1) {
+      const folderName = folders.value[index].name;
+      folders.value.splice(index, 1);
+
+      if (keepContents) {
+        images.value.forEach((img) => {
+          if (img.folderId === id) {
+            img.folderId = null;
+          }
+        });
+      } else {
+        images.value = images.value.filter((img) => {
+          if (img.folderId === id) {
+            if (currentImageId.value === img.id) {
+              currentImageId.value = null;
+            }
+            return false;
+          }
+          return true;
+        });
+        if (!currentImageId.value && images.value.length > 0) {
+          currentImageId.value = images.value[0].id;
+        }
+      }
+      triggerDBSync();
+      requestCanvasUpdate();
+      showToast(`Folder "${folderName}" deleted.`, "info");
+    }
+  }
+
+  function moveImageToFolder(imageId: string, folderId: string | null) {
+    const img = images.value.find((i) => i.id === imageId);
+    if (img) {
+      img.folderId = folderId;
+      triggerDBSync();
+    }
+  }
+
+  async function initializeFromDB() {
+    const data = await loadWorkspace();
+    if (data) {
+      folders.value = data.folders || [];
+      images.value = data.images || [];
+      if (images.value.length > 0) {
+        // Find first image to switch to
+        currentImageId.value = images.value[0].id;
+      }
+      requestCanvasUpdate();
+    }
+  }
+
+
   return {
     images,
     currentImageId,
+    folders,
+    mousePos,
     isAddingLine,
     isAddingReferenceLine,
     triggerCanvasUpdate,
@@ -291,6 +381,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     showConfirm,
     closeModal,
     showToast,
-    clearAllWorkspaceData
+    clearAllWorkspaceData,
+    createFolder,
+    renameFolder,
+    deleteFolder,
+    moveImageToFolder,
+    initializeFromDB
   };
 });

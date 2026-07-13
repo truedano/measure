@@ -11,12 +11,20 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import Toolbar from './components/Toolbar.vue';
 import Sidebar from './components/Sidebar.vue';
 import CanvasArea from './components/CanvasArea.vue';
 import DataSheet from './components/DataSheet.vue';
 import ConfirmModal from './components/ConfirmModal.vue';
 import ToastPanel from './components/ToastPanel.vue';
+import { useWorkspaceStore } from './stores/workspaceStore';
+
+const store = useWorkspaceStore();
+
+onMounted(() => {
+  store.initializeFromDB();
+});
 </script>
 
 <style>
