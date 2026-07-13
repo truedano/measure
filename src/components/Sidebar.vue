@@ -126,9 +126,21 @@
             </button>
           </div>
           
-          <div v-if="uncategorizedImages.length === 0" class="empty-folder-info">
-            No uncategorized images.
-          </div>
+          <label class="folder-upload-placeholder">
+            <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>{{ uncategorizedImages.length === 0 ? 'No images. Click to upload here' : 'Upload to Uncategorized' }}</span>
+            <input 
+              type="file" 
+              @change="handleImage($event, null)" 
+              accept="image/*" 
+              multiple 
+              style="display: none;"
+            >
+          </label>
         </div>
       </div>
 
@@ -249,9 +261,21 @@
             </button>
           </div>
           
-          <div v-if="getFolderImages(folder.id).length === 0" class="empty-folder-info">
-            No images in this folder.
-          </div>
+          <label class="folder-upload-placeholder">
+            <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>{{ getFolderImages(folder.id).length === 0 ? 'No images. Click to upload here' : 'Upload to this group' }}</span>
+            <input 
+              type="file" 
+              @change="handleImage($event, folder.id)" 
+              accept="image/*" 
+              multiple 
+              style="display: none;"
+            >
+          </label>
         </div>
       </div>
 
@@ -435,10 +459,10 @@ function handleImage(event: Event, targetFolderId: string | null = null) {
 }
 
 .upload-btn {
-  background: #a855f7;
-  color: white;
-  border: none;
-  padding: 6px 12px;
+  background: rgba(168, 85, 247, 0.08);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  padding: 5px 12px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
@@ -450,15 +474,17 @@ function handleImage(event: Event, targetFolderId: string | null = null) {
 }
 
 .upload-btn:hover {
-  background: #9333ea;
+  background: #a855f7;
+  color: white;
+  border-color: #a855f7;
   box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
 }
 
 .clear-all-btn {
   background: #ef4444;
   color: white;
-  border: none;
-  padding: 6px 12px;
+  border: 1px solid transparent;
+  padding: 5px 12px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
@@ -471,6 +497,7 @@ function handleImage(event: Event, targetFolderId: string | null = null) {
 
 .clear-all-btn:hover:not(:disabled) {
   background: #dc2626;
+  border-color: transparent;
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
 }
 
@@ -776,12 +803,32 @@ function handleImage(event: Event, targetFolderId: string | null = null) {
   cursor: not-allowed;
 }
 
-.empty-folder-info {
-  padding: 10px 0;
-  text-align: center;
-  color: #555;
-  font-size: 10px;
-  font-style: italic;
+.folder-upload-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.folder-upload-placeholder:hover {
+  background: rgba(168, 85, 247, 0.04);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+
+.folder-upload-placeholder .ui-icon {
+  width: 12px;
+  height: 12px;
 }
 
 .empty-list {
