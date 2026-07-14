@@ -39,8 +39,20 @@ export function useZoomPan(
     const img = store.currentImage?.imgObject;
     if (!canvas || !img) return;
 
-    const widthScale = canvas.clientWidth / img.width;
-    const heightScale = canvas.clientHeight / img.height;
+    const rotationDeg = store.rotation;
+    let imgWidth = img.width;
+    let imgHeight = img.height;
+
+    if (rotationDeg) {
+      const angleRad = (rotationDeg * Math.PI) / 180;
+      const cosA = Math.abs(Math.cos(angleRad));
+      const sinA = Math.abs(Math.sin(angleRad));
+      imgWidth = img.width * cosA + img.height * sinA;
+      imgHeight = img.width * sinA + img.height * cosA;
+    }
+
+    const widthScale = canvas.clientWidth / imgWidth;
+    const heightScale = canvas.clientHeight / imgHeight;
     const newScale = Math.min(widthScale, heightScale, 1) * 0.95;
 
     store.zoomLevel = newScale;

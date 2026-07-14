@@ -8,10 +8,26 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     const canvas = canvasRef.value;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    return {
-      x: (clientX - rect.left - store.panX) / store.zoomLevel,
-      y: (clientY - rect.top - store.panY) / store.zoomLevel,
-    };
+    
+    const xZp = (clientX - rect.left - store.panX) / store.zoomLevel;
+    const yZp = (clientY - rect.top - store.panY) / store.zoomLevel;
+
+    const img = store.currentImage?.imgObject;
+    const rotationDeg = store.rotation;
+    if (img && rotationDeg) {
+      const angleRad = (rotationDeg * Math.PI) / 180;
+      const cx = img.width / 2;
+      const cy = img.height / 2;
+      const cosA = Math.cos(angleRad);
+      const sinA = Math.sin(angleRad);
+
+      return {
+        x: cx + (xZp - cx) * cosA + (yZp - cy) * sinA,
+        y: cy - (xZp - cx) * sinA + (yZp - cy) * cosA,
+      };
+    }
+
+    return { x: xZp, y: yZp };
   }
 
   function calculateLineLength(line: Line): number {
@@ -142,6 +158,17 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
       ctx.scale(store.zoomLevel, store.zoomLevel);
       ctx.translate(store.panX / store.zoomLevel, store.panY / store.zoomLevel);
       
+      const img = store.currentImage?.imgObject;
+      const rotationDeg = store.rotation;
+      if (img && rotationDeg) {
+        const angleRad = (rotationDeg * Math.PI) / 180;
+        const cx = img.width / 2;
+        const cy = img.height / 2;
+        ctx.translate(cx, cy);
+        ctx.rotate(angleRad);
+        ctx.translate(-cx, -cy);
+      }
+
       // Draw background image
       if (store.currentImage && store.currentImage.imgObject) {
         ctx.drawImage(store.currentImage.imgObject, 0, 0);

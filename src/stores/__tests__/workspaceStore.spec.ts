@@ -233,4 +233,39 @@ describe('useWorkspaceStore', () => {
     store.selectedFolderFilter = fId;
     expect(store.tableData.length).toBe(2);
   });
+
+  it('supports fine-tuned image rotation and reset', () => {
+    const store = useWorkspaceStore();
+    const mockImg: any = {
+      id: 'img-1',
+      name: 'test.png',
+      src: '',
+      imgObject: null,
+      lines: [],
+      referenceLine: null,
+      referenceLength: 0,
+      unit: 'mm',
+      scale: 1,
+      dpi: '',
+      zoomLevel: 1,
+      panX: 0,
+      panY: 0,
+      rotation: 0
+    };
+
+    store.images.push(mockImg);
+    store.switchImage('img-1');
+
+    // Default rotation
+    expect(store.rotation).toBe(0);
+
+    // Update rotation
+    store.rotation = 12.5;
+    expect(store.rotation).toBe(12.5);
+    expect(store.images[0].rotation).toBe(12.5);
+
+    // Test fallback for old image workspaces without rotation field
+    delete store.images[0].rotation;
+    expect(store.rotation).toBe(0);
+  });
 });

@@ -1,6 +1,6 @@
 <template>
   <div id="main-workspace" ref="workspaceRef" class="workspace-container">
-    <!-- Zoom and Pan Controls -->
+    <!-- Zoom, Pan and Rotate Controls -->
     <div id="controls">
       <button @click="zoomIn" :disabled="!store.currentImageId">+</button>
       <span id="zoom-level">{{ store.currentImageId ? (store.zoomLevel * 100).toFixed(0) : 100 }}%</span>
@@ -8,6 +8,43 @@
 
       <button @click="resetZoom" :disabled="!store.currentImageId">100%</button>
       <button @click="fitToWindow" :disabled="!store.currentImageId">Fit</button>
+
+      <!-- Divider & Rotation Controls -->
+      <div v-if="store.currentImageId" class="control-divider"></div>
+      <div v-if="store.currentImageId" class="rotate-control-group">
+        <span class="control-label">Rotate:</span>
+        <input 
+          type="range" 
+          v-model.number="store.rotation" 
+          @input="store.requestCanvasUpdate" 
+          min="-180" 
+          max="180" 
+          step="0.1"
+          class="rotation-slider"
+          title="Fine-tune rotation"
+        >
+        <input 
+          type="number" 
+          v-model.number="store.rotation" 
+          @input="store.requestCanvasUpdate" 
+          min="-180" 
+          max="180" 
+          step="0.1"
+          class="rotation-input"
+        >
+        <span class="deg-unit">°</span>
+        <button 
+          @click="store.rotation = 0; store.requestCanvasUpdate()" 
+          :disabled="store.rotation === 0"
+          title="Reset rotation"
+          class="reset-btn"
+        >
+          <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Overlay Container: aligns overlays exactly over the Canvas coordinates -->
@@ -246,10 +283,37 @@ function endDraggingHandle() {
 }
 
 // Positioning CSS computation
+function getRotatedPosition(pt: Point): Point {
+  const img = store.currentImage?.imgObject;
+  const rotationDeg = store.rotation;
+  
+  if (img && rotationDeg) {
+    const angleRad = (rotationDeg * Math.PI) / 180;
+    const cx = img.width / 2;
+    const cy = img.height / 2;
+    const cosA = Math.cos(angleRad);
+    const sinA = Math.sin(angleRad);
+
+    const dx = pt.x - cx;
+    const dy = pt.y - cy;
+
+    return {
+      x: cx + dx * cosA - dy * sinA,
+      y: cy + dx * sinA + dy * cosA
+    };
+  }
+  return pt;
+}
+
 function getLineStyle(line: Line) {
   if (!line.end) return {};
-  const left = ((line.start.x + line.end.x) / 2) * store.zoomLevel + store.panX;
-  const top = ((line.start.y + line.end.y) / 2) * store.zoomLevel + store.panY;
+  const midPoint = {
+    x: (line.start.x + line.end.x) / 2,
+    y: (line.start.y + line.end.y) / 2
+  };
+  const rotated = getRotatedPosition(midPoint);
+  const left = rotated.x * store.zoomLevel + store.panX;
+  const top = rotated.y * store.zoomLevel + store.panY;
   return {
     left: `${left}px`,
     top: `${top}px`,
@@ -257,8 +321,9 @@ function getLineStyle(line: Line) {
 }
 
 function getHandleStyle(handle: Point) {
-  const left = handle.x * store.zoomLevel + store.panX;
-  const top = handle.y * store.zoomLevel + store.panY;
+  const rotated = getRotatedPosition(handle);
+  const left = rotated.x * store.zoomLevel + store.panX;
+  const top = rotated.y * store.zoomLevel + store.panY;
   return {
     left: `${left}px`,
     top: `${top}px`,
@@ -433,5 +498,95 @@ function getHandleStyle(handle: Point) {
   height: 14px;
   stroke-width: 2.2;
   flex-shrink: 0;
+}
+
+.control-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 8px;
+}
+
+.rotate-control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-label {
+  font-size: 11px;
+  color: #aaa;
+  font-weight: 500;
+  margin-right: 2px;
+}
+
+.rotation-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 4px;
+  border-radius: 2px;
+  background: #333;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.rotation-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #00f0ff;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.rotation-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.rotation-input {
+  background: #252525;
+  border: 1px solid #444;
+  color: white;
+  padding: 3px 6px;
+  border-radius: 4px;
+  width: 48px;
+  font-size: 11px;
+  outline: none;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.rotation-input:focus {
+  border-color: #00f0ff;
+}
+
+.deg-unit {
+  font-size: 11px;
+  color: #888;
+  margin-left: -4px;
+  margin-right: 4px;
+}
+
+#controls .reset-btn {
+  padding: 0;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #252525;
+  border: 1px solid #444;
+  color: white;
+  min-width: unset;
+}
+
+#controls .reset-btn:hover:not(:disabled) {
+  background: #353535;
+  color: white;
 }
 </style>

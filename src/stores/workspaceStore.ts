@@ -136,6 +136,15 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   });
 
+  const rotation = computed({
+    get: () => currentImage.value?.rotation ?? 0,
+    set: (val: number) => {
+      if (currentImage.value) {
+        currentImage.value.rotation = val;
+      }
+    }
+  });
+
   const tableData = computed(() => {
     const data: any[] = [];
     const filteredImages = images.value.filter((img) => {
@@ -423,6 +432,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     zoomLevel,
     panX,
     panY,
+    rotation,
     tableData,
     hasMeasurements,
     requestCanvasUpdate,

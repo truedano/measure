@@ -404,7 +404,8 @@ function handleImage(event: Event, targetFolderId: string | null = null) {
             zoomLevel: 1,
             panX: 0,
             panY: 0,
-            folderId: targetFolderId
+            folderId: targetFolderId,
+            rotation: 0
           });
         };
         imgObj.src = e.target?.result as string;
@@ -415,8 +416,8 @@ function handleImage(event: Event, targetFolderId: string | null = null) {
 
   Promise.all(promises).then((newImages) => {
     store.images.push(...newImages);
-    if (!store.currentImageId && store.images.length > 0) {
-      store.switchImage(store.images[store.images.length - newImages.length].id);
+    if (newImages.length > 0) {
+      store.switchImage(newImages[0].id);
     } else {
       store.requestCanvasUpdate();
     }

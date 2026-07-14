@@ -41,6 +41,7 @@ export async function saveWorkspace(images: ImageWorkspace[], folders: Folder[],
         panX: img.panX,
         panY: img.panY,
         folderId: img.folderId || null,
+        rotation: img.rotation ?? 0,
         imgObject: null // Strip out DOM image object
       };
     });

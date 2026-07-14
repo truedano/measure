@@ -30,6 +30,7 @@ export interface ImageWorkspace {
   panX: number;
   panY: number;
   folderId?: string | null;
+  rotation?: number;
 }
 
 export interface ModalState {
