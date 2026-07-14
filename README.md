@@ -1,27 +1,52 @@
 # Photo Measurement Tool
 
-Measure distances within images using a reference size or DPI value.
+一個強大且隱私安全的相片尺寸測量工具，支援透過自訂參考基準尺規或 DPI 數值來精確測量相片中的任意線段與實體尺寸。
 
-# https://victornpb.github.io/measure/
+👉 **線上展示 / Demo**: [https://measure-azure.vercel.app/](https://measure-azure.vercel.app/)
 
-## Features
+---
 
-- **Draw Lines:** Measure features on an image.
-- **Pixel Measurements:** Determine sizes in pixels.
-- **Real-World Units:** Measure in real units for scanned images with a known DPI.
-- **Relative Measurements:** Compare sizes relative to a reference object.
-- **Local/Offline Use:** Images are processed locally; no data is sent to servers.
+## 核心功能 (Core Features)
 
-## How to Use
+- 📏 **自訂參考基準尺規 (Reference Calibration):** 可自由設定一條已知實體長度的參考線段（例如悠遊卡、硬幣或尺規），工具將以此為基準自動推算其他線段的實體尺寸。
+- 🎯 **精確量測線段 (Precision Measurements):** 支援以像素 (px) 或自訂實體單位（如 mm、cm、inch 等）來繪製並計算多組測量線段。
+- 🌀 **圖片任意角度旋轉微調 (Arbitrary Image Rotation):** 支援 0° ~ 360° 的任意角度旋轉校正，在平移與縮放時可保持完美的對齊與渲染，輕鬆搞定傾斜的相片。
+- 🎨 **線段懸停高亮與多色彩區分 (Line Hover Highlighting & Color Coding):**
+  - 滑鼠懸停於測量線段時，畫布與列表中的對應項目會同步加粗高亮。
+  - 不同線段自動以不同的高對比顏色繪製，方便在複雜圖面中清晰辨識。
+- 💾 **IndexedDB 狀態持久化 (IndexedDB Workspace Auto-Save):** 自動在本地 IndexedDB 儲存目前的工作狀態。即使重新整理網頁或關閉瀏覽器，再次開啟時亦能完整還原您的所有圖片、測量線段、旋轉角度及最後瀏覽的圖片狀態。
+- 🖼️ **工作區多圖管理 (Workspace Multi-Image Management):**
+  - 支援同時上傳並切換多張圖片。
+  - 圖片管理區新增 **一鍵清除所有圖片 (Clear All)** 的快速清理功能。
+- 🏷️ **版本號動態顯示 (Dynamic Version Display):** 工具列標題右側動態顯示當前 `package.json` 設定之版本號。
+- 🔒 **本地離線處理 (Local & Offline First):** 所有圖片及測量數據均完全在您的瀏覽器本地處理，絕不上傳至任何伺服器，確保隱私安全。
 
-1. **Load an Image:** Upload your image.
-2. **Set Reference Size:** Click "Add Reference Size," then set the start and end points. Enter the length and unit.
-3. **Input DPI:** Enter DPI if known to scale measurements accurately.
-4. **Add Measurement Lines:** Click "New Measurement Line" to draw lines.
-5. **Adjust or Remove:** Drag handles to adjust lines, or click "✖" to remove them.
+---
 
-### Important
+## 使用說明 (How to Use)
 
-**Understanding Perspective:** If you're measuring from photos taken with a camera, keep in mind that perspective can affect accuracy. Measurements will be correct only if the objects and the reference line are on the same flat surface and at the same distance from the camera. Avoid using reference lines on objects that are angled, tilted, or on different depth planes, as this will distort the measurements. Imagine how things look smaller when they're farther away — the same happens in photos! To get accurate results, ensure everything is flat and aligned with the camera lens.
+1. **載入圖片 (Load Image):** 點擊上傳或拖放圖片至工作區。
+2. **設定參考基準 (Set Reference Size):** 點擊「Add Reference Size」，在畫布上繪製一條已知長度的線段，並輸入其長度與單位。
+3. **輸入 DPI (Input DPI):** 若圖片為已知 DPI 的掃描檔，可直接輸入 DPI 值來自動計算比例。
+4. **新增測量線段 (Add Measurement Lines):** 點擊「New Measurement Line」，即可在圖片上繪製任意想測量的長度。
+5. **微調與刪除 (Adjust & Remove):** 拖曳線段端點即可微調，或點擊「✖」刪除該線段。
+6. **校正圖片角度 (Rotate Image):** 利用工具列的旋轉滑桿或輸入數值，可對圖片進行任意角度的旋轉校正。
 
-# Test Change
+---
+
+### ⚠️ 重要注意事項 (Important Perspective Notice)
+
+**透視變形與測量誤差：**
+如果您使用的是普通相機拍攝的相片，請注意**透視變形（Perspective Distortion）**對測量精度的影響。
+只有當被測物體與參考尺規處於**同一水平面**，且**垂直於相機鏡頭的拍攝軸線**時，測量結果才具備高精確度。
+請避免使用傾斜、有深度差或斜角平面上的參考基準，否則會因為近大遠小的透視效應導致嚴重的計算偏差。
+
+---
+
+## 技術堆疊 (Tech Stack)
+- Vue 3 (Composition API)
+- TypeScript
+- Vite
+- Pinia (狀態管理)
+- IndexedDB (本地持久化)
+
