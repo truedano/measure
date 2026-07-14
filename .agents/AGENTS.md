@@ -5,7 +5,7 @@ This file outlines critical development guidelines and behavioral rules that mus
 ## 1. Codebase Memory MCP Indexing
 - **Action & Rule**: Whenever files are created, modified, or deleted, the agent MUST automatically run the indexing CLI to update `graph.db.zst` and `artifact.json` in the workspace folder. Do not skip this step or defer it to the user.
 - **Sync Execution Details**: To avoid Windows file-locking conflicts (`write_artifact` sharing violations) with the active background MCP server process, the agent must execute the following sequence:
-  1. Delete the local SQLite database file `.codebase-memory/C-nodejsProjects-measure.db` if it exists.
+  1. Delete the local SQLite database file `.codebase-memory/C-nodejsProjects-measure.db` and the `graph.db.zst` file if they exist.
   2. Execute the CLI command in Powershell:
      ```powershell
      $env:CBM_CACHE_DIR = ".codebase-memory"; $env:CBM_PERSIST_EXPORTS = "true"; & "C:/Users/truedano/AppData/Local/Programs/codebase-memory-mcp/codebase-memory-mcp.exe" cli index_repository '{\"repo_path\": \"c:/nodejsProjects/measure\", \"persistence\": true}'

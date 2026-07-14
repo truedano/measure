@@ -13,6 +13,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const isAddingLine = ref(false);
   const isAddingReferenceLine = ref(false);
   const triggerCanvasUpdate = ref(0);
+  const hoveredLineIndex = ref<number | null>(null);
 
   let dbSyncTimeout: any = null;
   function triggerDBSync() {
@@ -420,6 +421,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     isAddingLine,
     isAddingReferenceLine,
     triggerCanvasUpdate,
+    hoveredLineIndex,
     modal,
     toast,
     currentImage,

@@ -49,59 +49,141 @@
 
     <!-- Overlay Container: aligns overlays exactly over the Canvas coordinates -->
     <div v-if="store.currentImageId" class="overlay-container">
-      <!-- Lines Overlay -->
+      <!-- Lines Overlay (Handles only, length UI moved to top-right panel) -->
       <div v-for="(line, index) in store.lines" :key="'line-' + index">
-        <div v-if="line.end" class="line-length" :style="getLineStyle(line)">
-          {{ getLineLength(line) }}
-          <span class="delete-line" @click="store.lines.splice(index, 1); store.requestCanvasUpdate()">
-            <svg class="ui-icon" style="margin: 0; width: 10px; height: 10px; vertical-align: baseline;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </span>
-        </div>
         <div 
           v-for="(handle, handleIndex) in line.handles" 
           :key="'handle-' + index + '-' + handleIndex" 
           class="handle" 
-          :style="getHandleStyle(handle)"
+          :style="[
+            getHandleStyle(handle),
+            {
+              backgroundColor: store.hoveredLineIndex === index ? getColorForLine(index) : 'rgba(0, 240, 255, 0.5)',
+              boxShadow: store.hoveredLineIndex === index ? `0 0 8px ${getColorForLine(index)}` : '0 0 6px rgba(0, 240, 255, 0.8)'
+            }
+          ]"
           @mousedown="startDraggingHandle($event, line, handleIndex + 1)"
+          @mouseenter="store.hoveredLineIndex = index; store.requestCanvasUpdate()"
+          @mouseleave="store.hoveredLineIndex = null; store.requestCanvasUpdate()"
         ></div>
       </div>
 
-      <!-- Reference Line Overlay -->
+      <!-- Reference Line Overlay (Handles only, settings UI moved to top-right panel) -->
       <div v-if="store.referenceLine && store.referenceLine.end">
-        <div class="reference-length" :style="getLineStyle(store.referenceLine)">
-          <input 
-            type="number" 
-            v-model.number="store.referenceLength" 
-            @input="store.updateMeasurementLabels" 
-            size="4" 
-            min="0" 
-            step="0.1"
-            class="ref-len-input"
-          >
-          <select v-model="store.unit" @change="store.updateMeasurementLabels" class="unit-select">
-            <option value="">none</option>
-            <option value="mm">mm</option>
-            <option value="cm">cm</option>
-            <option value="m">m</option>
-            <option value="in">in</option>
-          </select>
-          <span class="delete-line" @click="store.removeReferenceLine" title="Delete Reference Line">
-            <svg class="ui-icon" style="margin-left: 2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </span>
-        </div>
         <div 
           v-for="(handle, handleIndex) in store.referenceLine.handles" 
           :key="'ref-handle-' + handleIndex" 
           class="handle reference-handle" 
-          :style="getHandleStyle(handle)"
+          :style="[
+            getHandleStyle(handle),
+            {
+              backgroundColor: store.hoveredLineIndex === -1 ? '#a855f7' : 'rgba(168, 85, 247, 0.5)',
+              boxShadow: store.hoveredLineIndex === -1 ? '0 0 8px #a855f7' : '0 0 6px rgba(168, 85, 247, 0.8)'
+            }
+          ]"
           @mousedown="startDraggingHandle($event, store.referenceLine, handleIndex + 1)"
+          @mouseenter="store.hoveredLineIndex = -1; store.requestCanvasUpdate()"
+          @mouseleave="store.hoveredLineIndex = null; store.requestCanvasUpdate()"
         ></div>
+      </div>
+    </div>
+
+    <!-- Measurements and Calibration Panel (Top Right Floating Panel) -->
+    <div v-if="store.currentImageId" class="measurements-panel" :class="{ 'is-collapsed': isPanelCollapsed }">
+      <!-- Panel Header -->
+      <div class="panel-header" @click="isPanelCollapsed = !isPanelCollapsed">
+        <span class="panel-header-title">
+          <svg class="ui-icon" style="color: #00f0ff; width: 14px; height: 14px; margin-right: 6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="10" rx="2" ry="2"></rect>
+            <line x1="6" y1="7" x2="6" y2="12"></line>
+            <line x1="10" y1="7" x2="10" y2="12"></line>
+            <line x1="14" y1="7" x2="14" y2="12"></line>
+            <line x1="18" y1="7" x2="18" y2="12"></line>
+          </svg>
+          測量與校正 {{ store.lines.filter(l => l.end).length ? `(${store.lines.filter(l => l.end).length})` : '' }}
+        </span>
+        <span class="toggle-collapse-btn">
+          <svg class="ui-icon" :style="{ transform: isPanelCollapsed ? 'rotate(180deg)' : 'rotate(0deg)' }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </span>
+      </div>
+
+      <!-- Panel Content (Hidden when collapsed) -->
+      <div v-show="!isPanelCollapsed" class="panel-content">
+        <!-- Calibration Section -->
+        <div class="panel-section">
+          <div class="section-title">比例尺校正</div>
+          <div 
+            v-if="store.referenceLine && store.referenceLine.end" 
+            class="calibration-box"
+            :style="{ 
+              borderColor: store.hoveredLineIndex === -1 ? '#a855f7' : 'rgba(168, 85, 247, 0.2)',
+              boxShadow: store.hoveredLineIndex === -1 ? '0 0 6px rgba(168, 85, 247, 0.25)' : 'none'
+            }"
+            @mouseenter="store.hoveredLineIndex = -1; store.requestCanvasUpdate()"
+            @mouseleave="store.hoveredLineIndex = null; store.requestCanvasUpdate()"
+          >
+            <input 
+              type="number" 
+              v-model.number="store.referenceLength" 
+              @input="store.updateMeasurementLabels" 
+              min="0" 
+              step="0.1"
+              class="ref-len-input"
+              title="輸入參考線真實長度"
+              placeholder="長度"
+            >
+            <select v-model="store.unit" @change="store.updateMeasurementLabels" class="unit-select" title="選擇長度單位">
+              <option value="">none</option>
+              <option value="mm">mm</option>
+              <option value="cm">cm</option>
+              <option value="m">m</option>
+              <option value="in">in</option>
+            </select>
+            <button class="delete-btn" @click="store.removeReferenceLine" title="刪除參考線">
+              <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div v-else class="placeholder-text">
+            尚未繪製參考線
+          </div>
+        </div>
+
+        <!-- Measurements Section -->
+        <div class="panel-section">
+          <div class="section-title">測量線段</div>
+          <div v-if="store.lines.some(l => l.end)" class="measure-list">
+            <template v-for="(line, index) in store.lines" :key="'measure-list-' + index">
+              <div 
+                v-if="line.end" 
+                class="measure-item"
+                :class="{ 'is-hovered': store.hoveredLineIndex === index }"
+                :style="{ 
+                  borderColor: store.hoveredLineIndex === index ? getColorForLine(index) : 'rgba(255, 255, 255, 0.06)',
+                  boxShadow: store.hoveredLineIndex === index ? `0 0 6px ${getColorForLine(index)}40` : 'none'
+                }"
+                @mouseenter="store.hoveredLineIndex = index; store.requestCanvasUpdate()"
+                @mouseleave="store.hoveredLineIndex = null; store.requestCanvasUpdate()"
+              >
+                <span class="measure-label" :style="{ color: getColorForLine(index) }">L{{ index + 1 }}</span>
+                <span class="measure-val">{{ getLineLength(line) }}</span>
+                <button class="delete-btn" @click="store.lines.splice(index, 1); store.requestCanvasUpdate()" title="刪除線段">
+                  <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </template>
+          </div>
+          <div v-else class="placeholder-text">
+            尚未繪製測量線
+          </div>
+        </div>
       </div>
     </div>
 
@@ -131,9 +213,10 @@ const store = useWorkspaceStore();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 const currentHandle = ref<{ line: Line; handleIndex: number } | null>(null);
+const isPanelCollapsed = ref(false);
 
 // Composables
-const { getCanvasCoordinates, getLineLength, updateCanvas } = useCanvasDraw(canvasRef);
+const { getCanvasCoordinates, getLineLength, getColorForLine, updateCanvas } = useCanvasDraw(canvasRef);
 const {
   isPanning,
   zoomIn,
@@ -203,9 +286,8 @@ function clearMouse() {
 function placeLine(e: MouseEvent) {
   if (!store.currentImageId) return;
   
-  // If we clicked a handle, don't draw new lines
   const target = e.target as HTMLElement;
-  if (target.classList.contains('handle') || target.closest('.line-length') || target.closest('.reference-length')) {
+  if (target.classList.contains('handle') || target.closest('.measurements-panel')) {
     return;
   }
 
@@ -433,43 +515,186 @@ function getHandleStyle(handle: Point) {
   background-color: rgba(168, 85, 247, 0.85);
 }
 
-.line-length, .reference-length {
+.measurements-panel {
   position: absolute;
-  transform: translate(-50%, -100%);
-  background: rgba(15, 15, 15, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #00f0ff;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 11px;
+  top: 75px;
+  right: 20px;
+  width: 220px;
+  max-height: calc(100% - 120px);
+  overflow: hidden; /* Prevent scrollbar in header when collapsed */
+  z-index: 20;
+  background: rgba(20, 20, 20, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  color: #fff;
   font-family: 'Outfit', sans-serif;
-  white-space: nowrap;
-  pointer-events: auto; /* Allow mouse interaction for delete button */
-  z-index: 25;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  border: 1px solid rgba(0, 240, 255, 0.2);
+  pointer-events: auto; /* Allow interaction */
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.measurements-panel.is-collapsed {
+  max-height: 34px; /* Height of header only */
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background-color 0.2s;
+}
+
+.panel-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.panel-header * {
+  pointer-events: none;
+}
+
+.panel-header-title {
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  color: #ccc;
+  letter-spacing: 0.5px;
+}
+
+.toggle-collapse-btn {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-collapse-btn .ui-icon {
+  width: 12px;
+  height: 12px;
+  transition: transform 0.25s ease;
+}
+
+.panel-content {
+  padding: 10px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #666;
+  margin-bottom: 6px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 2px;
+}
+
+.calibration-box {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: -10px;
+  background: rgba(168, 85, 247, 0.05);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  padding: 4px 6px;
+  border-radius: 4px;
+  justify-content: space-between;
 }
 
-.reference-length {
+.calibration-label {
+  font-size: 10px;
   color: #a855f7;
-  border-color: rgba(168, 85, 247, 0.2);
+  font-weight: 500;
 }
 
-.delete-line {
-  cursor: pointer;
-  color: #aaa;
+.placeholder-text {
+  font-size: 10px;
+  color: #555;
+  font-style: italic;
+  padding: 2px 0;
+}
+
+.measure-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.measure-item {
   display: flex;
   align-items: center;
-  transition: color 0.1s;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
 }
 
-.delete-line:hover {
+.measure-item:hover {
+  background: rgba(0, 240, 255, 0.05);
+  border-color: rgba(0, 240, 255, 0.15);
+}
+
+.measure-label {
+  font-size: 10px;
+  color: #00f0ff;
+  font-weight: 500;
+}
+
+.measure-val {
+  font-size: 11px;
+  font-family: monospace;
+  color: #ccc;
+  margin-left: auto;
+  margin-right: 6px;
+}
+
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: #777;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.12s, background-color 0.12s;
+}
+
+.delete-btn:hover {
   color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.08);
+}
+
+.delete-btn .ui-icon {
+  width: 12px;
+  height: 12px;
 }
 
 .ref-len-input {
@@ -478,7 +703,7 @@ function getHandleStyle(handle: Point) {
   color: white;
   padding: 2px 4px;
   border-radius: 3px;
-  width: 45px;
+  width: 50px;
   font-size: 11px;
   outline: none;
 }
@@ -487,10 +712,11 @@ function getHandleStyle(handle: Point) {
   background: #181818;
   border: 1px solid #444;
   color: white;
-  padding: 2px 4px;
+  padding: 1px 2px;
   border-radius: 3px;
   font-size: 11px;
   outline: none;
+  width: 60px;
 }
 
 .ui-icon {

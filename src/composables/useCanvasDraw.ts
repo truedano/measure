@@ -4,6 +4,19 @@ import type { Line, Point } from '../types/workspace';
 export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
   const store = useWorkspaceStore();
 
+  const LINE_COLORS = [
+    '#00f0ff', // Neon Cyan
+    '#10b981', // Neon Emerald Green
+    '#fbbf24', // Neon Amber Yellow
+    '#f97316', // Neon Orange
+    '#ec4899', // Neon Pink
+    '#3b82f6'  // Neon Blue
+  ];
+
+  function getColorForLine(index: number): string {
+    return LINE_COLORS[index % LINE_COLORS.length];
+  }
+
   function getCanvasCoordinates(clientX: number, clientY: number): Point {
     const canvas = canvasRef.value;
     if (!canvas) return { x: 0, y: 0 };
@@ -45,9 +58,9 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
       : `${length.toFixed(2)} px`;
   }
 
-  function drawPerpendicularEnds(ctx: CanvasRenderingContext2D, line: Line) {
+  function drawPerpendicularEnds(ctx: CanvasRenderingContext2D, line: Line, isHovered = false) {
     if (!line.end) return;
-    const endLength = 10;
+    const endLength = isHovered ? 14 : 10;
     const angle = Math.atan2(line.end.y - line.start.y, line.end.x - line.start.x);
     const sinAngle = Math.sin(angle);
     const cosAngle = Math.cos(angle);
@@ -73,15 +86,23 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     ctx.stroke();
   }
 
-  function drawLine(ctx: CanvasRenderingContext2D, line: Line, color: string) {
+  function drawLine(ctx: CanvasRenderingContext2D, line: Line, color: string, isHovered = false) {
     if (!line.end) return;
+    ctx.save();
     ctx.strokeStyle = color;
-    ctx.lineWidth = 2 / store.zoomLevel; // Keep line width visually consistent
+    ctx.lineWidth = (isHovered ? 4 : 2) / store.zoomLevel; // Keep line width visually consistent
+    
+    if (isHovered) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 10 / store.zoomLevel;
+    }
+    
     ctx.beginPath();
     ctx.moveTo(line.start.x, line.start.y);
     ctx.lineTo(line.end.x, line.end.y);
     ctx.stroke();
-    drawPerpendicularEnds(ctx, line);
+    drawPerpendicularEnds(ctx, line, isHovered);
+    ctx.restore();
     
     // Sync handles positions
     line.handles[0].x = line.start.x;
@@ -176,13 +197,16 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
       
       // Draw reference line (purple / #a855f7)
       if (store.referenceLine && store.referenceLine.end) {
-        drawLine(ctx, store.referenceLine, '#a855f7');
+        const isRefHovered = store.hoveredLineIndex === -1;
+        drawLine(ctx, store.referenceLine, '#a855f7', isRefHovered);
       }
       
-      // Draw measurement lines (cyan / #00f0ff)
-      store.lines.forEach((line) => {
+      // Draw measurement lines with distinct colors and hover highlighting
+      store.lines.forEach((line, index) => {
         if (line.end) {
-          drawLine(ctx, line, '#00f0ff');
+          const color = getColorForLine(index);
+          const isHovered = store.hoveredLineIndex === index;
+          drawLine(ctx, line, color, isHovered);
         }
       });
 
@@ -204,6 +228,8 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     getCanvasCoordinates,
     calculateLineLength,
     getLineLength,
+    getColorForLine,
+    LINE_COLORS,
     updateCanvas
   };
 }
