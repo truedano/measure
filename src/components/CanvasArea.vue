@@ -387,20 +387,6 @@ function getRotatedPosition(pt: Point): Point {
   return pt;
 }
 
-function getLineStyle(line: Line) {
-  if (!line.end) return {};
-  const midPoint = {
-    x: (line.start.x + line.end.x) / 2,
-    y: (line.start.y + line.end.y) / 2
-  };
-  const rotated = getRotatedPosition(midPoint);
-  const left = rotated.x * store.zoomLevel + store.panX;
-  const top = rotated.y * store.zoomLevel + store.panY;
-  return {
-    left: `${left}px`,
-    top: `${top}px`,
-  };
-}
 
 function getHandleStyle(handle: Point) {
   const rotated = getRotatedPosition(handle);
