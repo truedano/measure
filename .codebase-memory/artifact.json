@@ -1,11 +1,11 @@
 {
     "schema_version": 1,
     "commit": "",
-    "indexed_at": "2026-07-12T09:52:33Z",
+    "indexed_at": "2026-07-14T11:09:07Z",
     "project": "C-nodejsProjects-measure",
-    "nodes": 19,
-    "edges": 18,
-    "original_size": 1179648,
-    "compressed_size": 3791,
+    "nodes": 179,
+    "edges": 294,
+    "original_size": 1572864,
+    "compressed_size": 149029,
     "compression_level": 9
 }

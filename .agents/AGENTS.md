@@ -3,9 +3,13 @@
 This file outlines critical development guidelines and behavioral rules that must be strictly followed for the `measure` project.
 
 ## 1. Codebase Memory MCP Indexing
-- **Action**: Do NOT force execution of the external Node.js CLI indexing script (`index_repo.js`) at the end of every agent turn. This avoids Windows file-locking conflicts (`write_artifact` sharing violations) with the active background MCP server process.
-- **Incremental Updates**: Rely on the background `codebase-memory-mcp` server's built-in file-watching and incremental scanning. The server automatically detects file modifications (`mtime` changes) and parses changed files on demand.
-- **Git Synchronization & Persistence**: To package and share index states with teammates (updating `graph.db.zst`), execute `index_repo.js` manually after closing the IDE, or bind it to git pre-commit hooks. Do not make turn-level execution by agents mandatory.
+- **Action & Rule**: Whenever files are created, modified, or deleted, the agent MUST automatically run the indexing CLI to update `graph.db.zst` and `artifact.json` in the workspace folder. Do not skip this step or defer it to the user.
+- **Sync Execution Details**: To avoid Windows file-locking conflicts (`write_artifact` sharing violations) with the active background MCP server process, the agent must execute the following sequence:
+  1. Delete the local SQLite database file `.codebase-memory/C-nodejsProjects-measure.db` if it exists.
+  2. Execute the CLI command in Powershell:
+     ```powershell
+     $env:CBM_CACHE_DIR = ".codebase-memory"; $env:CBM_PERSIST_EXPORTS = "true"; & "C:/Users/truedano/AppData/Local/Programs/codebase-memory-mcp/codebase-memory-mcp.exe" cli index_repository '{\"repo_path\": \"c:/nodejsProjects/measure\", \"persistence\": true}'
+     ```
 - **Rule**: Always prioritize querying the project-local `codebase-memory-mcp` index (via tools like `search_graph`, `trace_path`, `get_code_snippet`, `query_graph`, `search_code`) to explore and locate codebase information. DO NOT fall back to `grep` or raw file reading tools unless the local index returns insufficient results. This is to ensure queries target the project-local database and minimize token consumption.
 - **MCP Priority Constraint**: Before reading or modifying any code file (e.g., `.ts`, `.vue`), you MUST first invoke `search_graph` or `search_code` to search for target symbols or modules. Directly calling `view_file` on code files without an initial MCP query is strictly forbidden. `view_file` should only be used as a fallback for non-code config files (like `PRD.md`, `AGENTS.md`, `.gitignore`) or when the local graph index fails to return template/style block context. Violation of this priority rule will be flagged as a development regression.
 
