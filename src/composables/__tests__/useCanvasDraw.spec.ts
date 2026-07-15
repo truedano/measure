@@ -95,4 +95,25 @@ describe('useCanvasDraw', () => {
     expect(coords.x).toBeCloseTo(0, 4);
     expect(coords.y).toBeCloseTo(100, 4);
   });
+
+  it('calculates distance from point to segment correctly', () => {
+    const canvasRef = ref<HTMLCanvasElement | null>(null);
+    const { getDistanceToSegment } = useCanvasDraw(canvasRef);
+
+    const p1 = { x: 0, y: 0 };
+    const p2 = { x: 10, y: 0 };
+
+    // Point projecting inside segment (perpendicular distance)
+    expect(getDistanceToSegment({ x: 5, y: 5 }, p1, p2)).toBeCloseTo(5, 4);
+
+    // Point projecting to start point
+    expect(getDistanceToSegment({ x: -3, y: 4 }, p1, p2)).toBeCloseTo(5, 4);
+
+    // Point projecting to end point
+    expect(getDistanceToSegment({ x: 13, y: 4 }, p1, p2)).toBeCloseTo(5, 4);
+
+    // Point directly on segment
+    expect(getDistanceToSegment({ x: 7, y: 0 }, p1, p2)).toBeCloseTo(0, 4);
+  });
 });
+

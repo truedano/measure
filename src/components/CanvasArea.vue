@@ -192,8 +192,8 @@
       @click="placeLine" 
       @mousemove="trackMouse"
       @mouseleave="clearMouse"
-      :style="{ cursor: store.isAddingLine || store.isAddingReferenceLine ? 'crosshair' : (isPanning ? 'grabbing' : 'default') }"
-      @mousedown="startPan" 
+      :style="{ cursor: store.isAddingLine || store.isAddingReferenceLine ? 'crosshair' : (store.hoveredLineIndex !== null ? 'move' : (isPanning ? 'grabbing' : 'default')) }"
+      @mousedown="handleMouseDown" 
       @touchstart="startTouchPan" 
       @touchmove="handleTouchMove" 
       @touchend="endTouchPan"
@@ -213,10 +213,14 @@ const store = useWorkspaceStore();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 const currentHandle = ref<{ line: Line; handleIndex: number } | null>(null);
+const isDraggingLine = ref(false);
+const dragStartMouse = ref<Point | null>(null);
+const dragStartLinePoints = ref<{ start: Point; end: Point } | null>(null);
+const draggingLineRef = ref<Line | null>(null);
 const isPanelCollapsed = ref(false);
 
 // Composables
-const { getCanvasCoordinates, getLineLength, getColorForLine, updateCanvas } = useCanvasDraw(canvasRef);
+const { getCanvasCoordinates, getLineLength, getColorForLine, updateCanvas, getDistanceToSegment } = useCanvasDraw(canvasRef);
 const {
   isPanning,
   zoomIn,
@@ -268,9 +272,43 @@ onUnmounted(() => {
 
 function trackMouse(e: MouseEvent) {
   if (!store.currentImageId) return;
+  const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
+  
   if (store.isAddingLine || store.isAddingReferenceLine) {
-    const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
     store.mousePos = { x, y };
+    store.requestCanvasUpdate();
+    return;
+  }
+  
+  if (currentHandle.value || isDraggingLine.value) return;
+
+  let foundHoveredIndex: number | null = null;
+  const threshold = 8 / store.zoomLevel;
+
+  // Check reference line
+  if (store.referenceLine && store.referenceLine.end) {
+    const dist = getDistanceToSegment({ x, y }, store.referenceLine.start, store.referenceLine.end);
+    if (dist <= threshold) {
+      foundHoveredIndex = -1;
+    }
+  }
+
+  // Check measurement lines
+  if (foundHoveredIndex === null) {
+    for (let i = store.lines.length - 1; i >= 0; i--) {
+      const line = store.lines[i];
+      if (line.end) {
+        const dist = getDistanceToSegment({ x, y }, line.start, line.end);
+        if (dist <= threshold) {
+          foundHoveredIndex = i;
+          break;
+        }
+      }
+    }
+  }
+
+  if (store.hoveredLineIndex !== foundHoveredIndex) {
+    store.hoveredLineIndex = foundHoveredIndex;
     store.requestCanvasUpdate();
   }
 }
@@ -362,6 +400,82 @@ function endDraggingHandle() {
   currentHandle.value = null;
   document.removeEventListener('mousemove', dragHandle);
   document.removeEventListener('mouseup', endDraggingHandle);
+}
+
+function handleMouseDown(e: MouseEvent) {
+  if (!store.currentImageId) return;
+  if (store.isAddingLine || store.isAddingReferenceLine) return;
+  
+  if (store.hoveredLineIndex !== null) {
+    startDraggingLine(e);
+  } else {
+    startPan(e);
+  }
+}
+
+function startDraggingLine(e: MouseEvent) {
+  if (store.hoveredLineIndex === null) return;
+  e.stopPropagation();
+  e.preventDefault();
+
+  const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
+  dragStartMouse.value = { x, y };
+
+  const line = store.hoveredLineIndex === -1 
+    ? store.referenceLine 
+    : store.lines[store.hoveredLineIndex];
+
+  if (line && line.start && line.end) {
+    draggingLineRef.value = line;
+    dragStartLinePoints.value = {
+      start: { ...line.start },
+      end: { ...line.end }
+    };
+    isDraggingLine.value = true;
+
+    document.addEventListener('mousemove', dragLine);
+    document.addEventListener('mouseup', endDraggingLine);
+  }
+}
+
+function dragLine(e: MouseEvent) {
+  if (!isDraggingLine.value || !draggingLineRef.value || !dragStartMouse.value || !dragStartLinePoints.value) return;
+  
+  const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
+  const dx = x - dragStartMouse.value.x;
+  const dy = y - dragStartMouse.value.y;
+
+  // Apply delta to line start and end
+  draggingLineRef.value.start.x = dragStartLinePoints.value.start.x + dx;
+  draggingLineRef.value.start.y = dragStartLinePoints.value.start.y + dy;
+  
+  if (draggingLineRef.value.end && dragStartLinePoints.value.end) {
+    draggingLineRef.value.end.x = dragStartLinePoints.value.end.x + dx;
+    draggingLineRef.value.end.y = dragStartLinePoints.value.end.y + dy;
+  }
+
+  // Update handles
+  if (draggingLineRef.value.handles[0]) {
+    draggingLineRef.value.handles[0].x = draggingLineRef.value.start.x;
+    draggingLineRef.value.handles[0].y = draggingLineRef.value.start.y;
+  }
+  if (draggingLineRef.value.handles[1] && draggingLineRef.value.end) {
+    draggingLineRef.value.handles[1].x = draggingLineRef.value.end.x;
+    draggingLineRef.value.handles[1].y = draggingLineRef.value.end.y;
+  }
+
+  store.updateMeasurementLabels();
+  updateCanvas();
+}
+
+function endDraggingLine() {
+  isDraggingLine.value = false;
+  draggingLineRef.value = null;
+  dragStartMouse.value = null;
+  dragStartLinePoints.value = null;
+
+  document.removeEventListener('mousemove', dragLine);
+  document.removeEventListener('mouseup', endDraggingLine);
 }
 
 // Positioning CSS computation

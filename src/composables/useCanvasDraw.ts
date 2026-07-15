@@ -224,12 +224,29 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     ctx.restore();
   }
 
+  function getDistanceToSegment(p: Point, p1: Point, p2: Point): number {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const l2 = dx * dx + dy * dy;
+    if (l2 === 0) return Math.sqrt((p.x - p1.x) ** 2 + (p.y - p1.y) ** 2);
+    
+    let t = ((p.x - p1.x) * dx + (p.y - p1.y) * dy) / l2;
+    t = Math.max(0, Math.min(1, t));
+    
+    const closestX = p1.x + t * dx;
+    const closestY = p1.y + t * dy;
+    
+    return Math.sqrt((p.x - closestX) ** 2 + (p.y - closestY) ** 2);
+  }
+
   return {
     getCanvasCoordinates,
     calculateLineLength,
     getLineLength,
     getColorForLine,
     LINE_COLORS,
-    updateCanvas
+    updateCanvas,
+    getDistanceToSegment
   };
 }
+
