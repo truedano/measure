@@ -100,7 +100,7 @@
             <line x1="14" y1="7" x2="14" y2="12"></line>
             <line x1="18" y1="7" x2="18" y2="12"></line>
           </svg>
-          測量與校正 {{ store.lines.filter(l => l.end).length ? `(${store.lines.filter(l => l.end).length})` : '' }}
+          Measurement & Calibration {{ store.lines.filter(l => l.end).length ? `(${store.lines.filter(l => l.end).length})` : '' }}
         </span>
         <span class="toggle-collapse-btn">
           <svg class="ui-icon" :style="{ transform: isPanelCollapsed ? 'rotate(180deg)' : 'rotate(0deg)' }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -113,7 +113,7 @@
       <div v-show="!isPanelCollapsed" class="panel-content">
         <!-- Calibration Section -->
         <div class="panel-section">
-          <div class="section-title">比例尺校正</div>
+          <div class="section-title">Scale Calibration</div>
           <div 
             v-if="store.referenceLine && store.referenceLine.end" 
             class="calibration-box"
@@ -131,17 +131,17 @@
               min="0" 
               step="0.1"
               class="ref-len-input"
-              title="輸入參考線真實長度"
-              placeholder="長度"
+              title="Enter the actual length of the reference line"
+              placeholder="Length"
             >
-            <select v-model="store.unit" @change="store.updateMeasurementLabels" class="unit-select" title="選擇長度單位">
+            <select v-model="store.unit" @change="store.updateMeasurementLabels" class="unit-select" title="Select length unit">
               <option value="">none</option>
               <option value="mm">mm</option>
               <option value="cm">cm</option>
               <option value="m">m</option>
               <option value="in">in</option>
             </select>
-            <button class="delete-btn" @click="store.removeReferenceLine" title="刪除參考線">
+            <button class="delete-btn" @click="store.removeReferenceLine" title="Delete reference line">
               <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -149,13 +149,13 @@
             </button>
           </div>
           <div v-else class="placeholder-text">
-            尚未繪製參考線
+            No reference line drawn
           </div>
         </div>
 
         <!-- Measurements Section -->
         <div class="panel-section">
-          <div class="section-title">測量線段</div>
+          <div class="section-title">Measurement Lines</div>
           <div v-if="store.lines.some(l => l.end)" class="measure-list">
             <template v-for="(line, index) in store.lines" :key="'measure-list-' + index">
               <div 
@@ -171,7 +171,7 @@
               >
                 <span class="measure-label" :style="{ color: getColorForLine(index) }">L{{ index + 1 }}</span>
                 <span class="measure-val">{{ getLineLength(line) }}</span>
-                <button class="delete-btn" @click="store.lines.splice(index, 1); store.requestCanvasUpdate()" title="刪除線段">
+                <button class="delete-btn" @click="store.lines.splice(index, 1); store.requestCanvasUpdate()" title="Delete line">
                   <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -181,7 +181,7 @@
             </template>
           </div>
           <div v-else class="placeholder-text">
-            尚未繪製測量線
+            No measurement lines drawn
           </div>
         </div>
       </div>
