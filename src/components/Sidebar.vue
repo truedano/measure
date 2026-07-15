@@ -1,7 +1,7 @@
 <template>
   <div id="sidebar">
     <div class="sidebar-header">
-      <h3>Files & Groups</h3>
+      <h3>{{ store.t('filesAndGroups') }}</h3>
       <div class="header-actions">
         <label class="upload-btn">
           <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -9,7 +9,7 @@
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
           </svg>
-          Upload
+          {{ store.t('upload') }}
           <input 
             type="file" 
             @change="handleImage" 
@@ -22,14 +22,14 @@
           @click="store.clearAllWorkspaceData" 
           :disabled="store.images.length === 0" 
           class="clear-all-btn"
-          title="Clear all uploaded images and data"
+          :title="store.t('clearAllTooltip')"
         >
           <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M3 6h18"></path>
             <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
             <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
           </svg>
-          Clear All
+          {{ store.t('clearAll') }}
         </button>
       </div>
     </div>
@@ -39,7 +39,7 @@
       <input 
         type="text" 
         v-model="newFolderName" 
-        placeholder="New group name..." 
+        :placeholder="store.t('newGroupNamePlaceholder')" 
         @keyup.enter="createNewFolder"
         class="folder-input"
       >
@@ -59,7 +59,7 @@
             <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
             </svg>
-            Uncategorized ({{ uncategorizedImages.length }})
+            {{ store.t('uncategorized') }} ({{ uncategorizedImages.length }})
           </span>
           <svg 
             class="ui-icon arrow-icon" 
@@ -91,7 +91,7 @@
                   @click.stop
                   class="move-select"
                 >
-                  <option value="">Move to...</option>
+                  <option value="">{{ store.t('moveTo') }}</option>
                   <option v-for="f in store.folders" :key="f.id" :value="f.id">{{ f.name }}</option>
                 </select>
               </div>
@@ -101,7 +101,7 @@
                 class="btn-sort-action" 
                 :disabled="isFirstSibling(image.id, image.folderId)" 
                 @click="store.moveImageOrder(image.id, 'up')"
-                title="Move up"
+                :title="store.t('moveUp')"
               >
                 <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <polyline points="18 15 12 9 6 15"></polyline>
@@ -111,7 +111,7 @@
                 class="btn-sort-action" 
                 :disabled="isLastSibling(image.id, image.folderId)" 
                 @click="store.moveImageOrder(image.id, 'down')"
-                title="Move down"
+                :title="store.t('moveDown')"
               >
                 <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <polyline points="6 9 12 15 18 9"></polyline>
@@ -132,7 +132,7 @@
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <span>{{ uncategorizedImages.length === 0 ? 'No images. Click to upload here' : 'Upload to Uncategorized' }}</span>
+            <span>{{ uncategorizedImages.length === 0 ? store.t('noImagesClickUpload') : store.t('uploadToUncategorized') }}</span>
             <input 
               type="file" 
               @change="handleImage($event, null)" 
@@ -225,8 +225,8 @@
                   @click.stop
                   class="move-select"
                 >
-                  <option value="">Move to...</option>
-                  <option value="uncategorized">Uncategorized</option>
+                  <option value="">{{ store.t('moveTo') }}</option>
+                  <option value="uncategorized">{{ store.t('uncategorized') }}</option>
                   <option v-for="f in store.folders.filter(x => x.id !== folder.id)" :key="f.id" :value="f.id">{{ f.name }}</option>
                 </select>
               </div>
@@ -236,7 +236,7 @@
                 class="btn-sort-action" 
                 :disabled="isFirstSibling(image.id, image.folderId)" 
                 @click="store.moveImageOrder(image.id, 'up')"
-                title="Move up"
+                :title="store.t('moveUp')"
               >
                 <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <polyline points="18 15 12 9 6 15"></polyline>
@@ -246,7 +246,7 @@
                 class="btn-sort-action" 
                 :disabled="isLastSibling(image.id, image.folderId)" 
                 @click="store.moveImageOrder(image.id, 'down')"
-                title="Move down"
+                :title="store.t('moveDown')"
               >
                 <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <polyline points="6 9 12 15 18 9"></polyline>
@@ -267,7 +267,7 @@
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <span>{{ getFolderImages(folder.id).length === 0 ? 'No images. Click to upload here' : 'Upload to this group' }}</span>
+            <span>{{ getFolderImages(folder.id).length === 0 ? store.t('noImagesClickUpload') : store.t('uploadToGroup') }}</span>
             <input 
               type="file" 
               @change="handleImage($event, folder.id)" 
@@ -280,7 +280,7 @@
       </div>
 
       <div v-if="store.images.length === 0 && store.folders.length === 0" class="empty-list">
-        No images loaded. Click Upload to start.
+        {{ store.t('noImagesLoaded') }}
       </div>
     </div>
   </div>
@@ -343,8 +343,8 @@ function triggerDeleteFolder(folderId: string, folderName: string) {
   const imagesInFolder = getFolderImages(folderId);
   if (imagesInFolder.length > 0) {
     store.showConfirm(
-      `Delete Folder "${folderName}"`,
-      `Would you like to delete the ${imagesInFolder.length} images inside this folder as well?\n\n- Click CONFIRM to delete everything.\n- Click CANCEL to delete ONLY the folder and keep the images (they will move to Uncategorized).`,
+      store.t('deleteFolderTitle', { name: folderName }),
+      store.t('deleteFolderMsg', { count: imagesInFolder.length }),
       () => {
         // Confirm callback: Delete folder and its images
         store.deleteFolder(folderId, false);

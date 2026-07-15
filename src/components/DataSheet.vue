@@ -9,13 +9,13 @@
           <line x1="9" y1="3" x2="9" y2="21"></line>
           <line x1="15" y1="3" x2="15" y2="21"></line>
         </svg>
-        Measurement Data Sheet
+        {{ store.t('measurementDataSheet') }}
       </h4>
       <div class="filter-wrapper">
-        <span class="filter-label">Group:</span>
+        <span class="filter-label">{{ store.t('groupLabel') }}</span>
         <select :value="store.selectedFolderFilter" @change="onFilterChange" class="filter-select">
-          <option value="all">All Groups</option>
-          <option value="uncategorized">Uncategorized</option>
+          <option value="all">{{ store.t('allGroups') }}</option>
+          <option value="uncategorized">{{ store.t('uncategorized') }}</option>
           <option v-for="f in store.folders" :key="f.id" :value="f.id">{{ f.name }}</option>
         </select>
       </div>
@@ -29,7 +29,7 @@
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
-          Copy Data
+          {{ store.t('copyData') }}
         </button>
       </div>
     </div>
@@ -38,10 +38,10 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Image Name</th>
-            <th>Line ID</th>
-            <th>Length</th>
-            <th>Note / Label (editable)</th>
+            <th>{{ store.t('imageNameCol') }}</th>
+            <th>{{ store.t('lineIdCol') }}</th>
+            <th>{{ store.t('lengthCol') }}</th>
+            <th>{{ store.t('noteCol') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -57,14 +57,14 @@
               <input 
                 type="text" 
                 v-model="row.line.note" 
-                placeholder="Double click to edit note..." 
+                :placeholder="store.t('editNotePlaceholder')" 
                 class="table-note-input"
               >
             </td>
           </tr>
           <tr v-if="store.tableData.length === 0">
             <td colspan="4" class="empty-row">
-              No measurement lines drawn yet. Load images and add lines.
+              {{ store.t('noLinesDrawnTable') }}
             </td>
           </tr>
         </tbody>
@@ -90,11 +90,11 @@ function copyTableData() {
 
   navigator.clipboard.writeText(content)
     .then(() => {
-      store.showToast("Measurement lengths copied to clipboard!", "success");
+      store.showToast(store.t('copySuccessToast'), "success");
     })
     .catch((err) => {
       console.error("Failed to copy text: ", err);
-      store.showToast("Failed to copy to clipboard. Please try again.", "error");
+      store.showToast(store.t('copyErrorToast'), "error");
     });
 }
 </script>

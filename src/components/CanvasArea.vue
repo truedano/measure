@@ -100,7 +100,7 @@
             <line x1="14" y1="7" x2="14" y2="12"></line>
             <line x1="18" y1="7" x2="18" y2="12"></line>
           </svg>
-          Measurement & Calibration {{ store.lines.filter(l => l.end).length ? `(${store.lines.filter(l => l.end).length})` : '' }}
+          {{ store.t('measurementAndCalibration') }} {{ store.lines.filter(l => l.end).length ? `(${store.lines.filter(l => l.end).length})` : '' }}
         </span>
         <span class="toggle-collapse-btn">
           <svg class="ui-icon" :style="{ transform: isPanelCollapsed ? 'rotate(180deg)' : 'rotate(0deg)' }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -113,7 +113,7 @@
       <div v-show="!isPanelCollapsed" class="panel-content">
         <!-- Calibration Section -->
         <div class="panel-section">
-          <div class="section-title">Scale Calibration</div>
+          <div class="section-title">{{ store.t('scaleCalibration') }}</div>
           <div 
             v-if="store.referenceLine && store.referenceLine.end" 
             class="calibration-box"
@@ -131,17 +131,17 @@
               min="0" 
               step="0.1"
               class="ref-len-input"
-              title="Enter the actual length of the reference line"
-              placeholder="Length"
+              :title="store.t('enterActualLengthTooltip')"
+              :placeholder="store.t('lengthPlaceholder')"
             >
-            <select v-model="store.unit" @change="store.updateMeasurementLabels" class="unit-select" title="Select length unit">
+            <select v-model="store.unit" @change="store.updateMeasurementLabels" class="unit-select" :title="store.t('selectUnitTooltip')">
               <option value="">none</option>
               <option value="mm">mm</option>
               <option value="cm">cm</option>
               <option value="m">m</option>
               <option value="in">in</option>
             </select>
-            <button class="delete-btn" @click="store.removeReferenceLine" title="Delete reference line">
+            <button class="delete-btn" @click="store.removeReferenceLine" :title="store.t('deleteRefTooltip')">
               <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -149,13 +149,13 @@
             </button>
           </div>
           <div v-else class="placeholder-text">
-            No reference line drawn
+            {{ store.t('noRefDrawn') }}
           </div>
         </div>
 
         <!-- Measurements Section -->
         <div class="panel-section">
-          <div class="section-title">Measurement Lines</div>
+          <div class="section-title">{{ store.t('measurementLines') }}</div>
           <div v-if="store.lines.some(l => l.end)" class="measure-list">
             <template v-for="(line, index) in store.lines" :key="'measure-list-' + index">
               <div 
@@ -171,7 +171,7 @@
               >
                 <span class="measure-label" :style="{ color: getColorForLine(index) }">L{{ index + 1 }}</span>
                 <span class="measure-val">{{ getLineLength(line) }}</span>
-                <button class="delete-btn" @click="store.lines.splice(index, 1); store.requestCanvasUpdate()" title="Delete line">
+                <button class="delete-btn" @click="store.lines.splice(index, 1); store.requestCanvasUpdate()" :title="store.t('deleteLineTooltip')">
                   <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -181,7 +181,7 @@
             </template>
           </div>
           <div v-else class="placeholder-text">
-            No measurement lines drawn
+            {{ store.t('noLinesDrawn') }}
           </div>
         </div>
       </div>

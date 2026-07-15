@@ -11,8 +11,8 @@
       </h3>
       <div class="modal-message">{{ store.modal.message }}</div>
       <div class="modal-buttons">
-        <button class="modal-btn cancel" @click="store.modal.onCancel">Cancel</button>
-        <button class="modal-btn confirm" @click="store.modal.onConfirm">Confirm</button>
+        <button class="modal-btn cancel" @click="store.modal.onCancel">{{ store.t('cancel') }}</button>
+        <button class="modal-btn confirm" @click="store.modal.onConfirm">{{ store.t('confirm') }}</button>
       </div>
     </div>
   </div>

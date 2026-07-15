@@ -47,3 +47,8 @@ This file outlines critical development guidelines and behavioral rules that mus
 - **Rule**: All core state, logic, scaling computations, and data transformations (such as Pinia stores and core composables) MUST have corresponding automated unit tests. Any modification, addition, or deletion of features requires the creation/updating of automated tests, and all tests must successfully pass in the local test harness (`npm run test`) before the task is considered complete and ready for deployment.
 
 
+## 9. Multi-Language & i18n Rule
+- **Rule**: When adding, modifying, or deleting any UI display text, label, placeholder, tooltip, dialog message, or toast notification, you MUST support the i18n multi-language mechanism.
+  - **Action**: Do NOT hardcode string literals inside Vue templates or script blocks. Instead, add the corresponding translation key-value pairs (for both `zh` and `en` locales) to the `locales` dictionary inside the store in `src/stores/workspaceStore.ts`, and call `store.t('key_name')` inside the component to render the text.
+
+
