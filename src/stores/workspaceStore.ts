@@ -44,6 +44,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       measurementLines: '測量線段',
       deleteLineTooltip: '刪除線段',
       noLinesDrawn: '尚未繪製測量線',
+      drawStartRef: '點擊設置參考線起點',
+      drawEndRef: '點擊完成參考線 (按 Shift 鎖定角度)',
+      drawStartLine: '點擊設置線段起點',
+      drawEndLine: '點擊完成線段 (按 Shift 鎖定角度)',
 
       // DataSheet
       measurementDataSheet: '測量數據表',
@@ -113,6 +117,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       measurementLines: 'Measurement Lines',
       deleteLineTooltip: 'Delete line',
       noLinesDrawn: 'No measurement lines drawn',
+      drawStartRef: 'Click to set reference line start',
+      drawEndRef: 'Click to complete reference line (Hold Shift to snap)',
+      drawStartLine: 'Click to set line start',
+      drawEndLine: 'Click to complete line (Hold Shift to snap)',
 
       // DataSheet
       measurementDataSheet: 'Measurement Data Sheet',

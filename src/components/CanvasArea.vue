@@ -128,6 +128,16 @@
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
       </button>
+
+      <!-- Drawing Cursor Tooltip -->
+      <div 
+        v-if="drawingTooltipText" 
+        class="drawing-tooltip" 
+        :class="{ 'reference-tooltip': store.isAddingReferenceLine }"
+        :style="drawingTooltipStyle"
+      >
+        {{ drawingTooltipText }}
+      </div>
     </div>
 
     <!-- Measurements and Calibration Panel (Top Right Floating Panel) -->
@@ -251,7 +261,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useWorkspaceStore } from '../stores/workspaceStore';
 import { useZoomPan } from '../composables/useZoomPan';
 import { useCanvasDraw } from '../composables/useCanvasDraw';
@@ -295,10 +305,26 @@ function handleResize() {
 }
 
 function handleGlobalKeyDown(e: KeyboardEvent) {
-  // If the user is typing in an input field, do not trigger deletion
+  // If the user is typing in an input field, do not trigger actions
   const tagName = document.activeElement?.tagName.toLowerCase();
   if (tagName === 'input' || tagName === 'textarea' || document.activeElement?.hasAttribute('contenteditable')) {
     return;
+  }
+
+  if (e.key === 'Escape') {
+    if (store.isAddingLine) {
+      if (store.lines.length > 0 && !store.lines[store.lines.length - 1].end) {
+        store.lines.pop(); // Remove half-drawn line
+      }
+      store.isAddingLine = false;
+      store.mousePos = null;
+      store.requestCanvasUpdate();
+    } else if (store.isAddingReferenceLine) {
+      store.referenceLine = null;
+      store.isAddingReferenceLine = false;
+      store.mousePos = null;
+      store.requestCanvasUpdate();
+    }
   }
 
   if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -345,9 +371,22 @@ onUnmounted(() => {
 
 function trackMouse(e: MouseEvent) {
   if (!store.currentImageId) return;
-  const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
+  let { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
   
   if (store.isAddingLine || store.isAddingReferenceLine) {
+    if (e.shiftKey) {
+      let startPoint = null;
+      if (store.isAddingLine && store.lines.length > 0 && !store.lines[store.lines.length - 1].end) {
+        startPoint = store.lines[store.lines.length - 1].start;
+      } else if (store.isAddingReferenceLine && store.referenceLine && !store.referenceLine.end) {
+        startPoint = store.referenceLine.start;
+      }
+      if (startPoint) {
+        const snapped = snapToAngle(startPoint.x, startPoint.y, x, y);
+        x = snapped.x;
+        y = snapped.y;
+      }
+    }
     store.mousePos = { x, y };
     store.requestCanvasUpdate();
     return;
@@ -407,7 +446,7 @@ function placeLine(e: MouseEvent) {
     return;
   }
 
-  const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
+  let { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
   
   if (store.isAddingLine) {
     if (!store.lines.length || store.lines[store.lines.length - 1].end) {
@@ -421,6 +460,11 @@ function placeLine(e: MouseEvent) {
     } else {
       // End current line
       const currentLine = store.lines[store.lines.length - 1];
+      if (e.shiftKey) {
+        const snapped = snapToAngle(currentLine.start.x, currentLine.start.y, x, y);
+        x = snapped.x;
+        y = snapped.y;
+      }
       currentLine.end = { x, y };
       currentLine.handles.push({ x, y });
       store.isAddingLine = false;
@@ -437,6 +481,11 @@ function placeLine(e: MouseEvent) {
       };
     } else if (!store.referenceLine.end) {
       // End reference line
+      if (e.shiftKey) {
+        const snapped = snapToAngle(store.referenceLine.start.x, store.referenceLine.start.y, x, y);
+        x = snapped.x;
+        y = snapped.y;
+      }
       store.referenceLine.end = { x, y };
       store.referenceLine.handles.push({ x, y });
       store.isAddingReferenceLine = false;
@@ -458,9 +507,20 @@ function startDraggingHandle(e: MouseEvent, line: Line, handleIndex: number) {
 
 function dragHandle(e: MouseEvent) {
   if (!currentHandle.value) return;
-  const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
-  const handle = currentHandle.value.line.handles[currentHandle.value.handleIndex - 1];
+  let { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
   
+  if (e.shiftKey) {
+    const otherPoint = currentHandle.value.handleIndex === 1
+      ? currentHandle.value.line.end
+      : currentHandle.value.line.start;
+    if (otherPoint) {
+      const snapped = snapToAngle(otherPoint.x, otherPoint.y, x, y);
+      x = snapped.x;
+      y = snapped.y;
+    }
+  }
+  
+  const handle = currentHandle.value.line.handles[currentHandle.value.handleIndex - 1];
   handle.x = x;
   handle.y = y;
   
@@ -597,6 +657,48 @@ function getLineCenterStyle(line: { start: Point; end?: Point | null }) {
     y: (line.start.y + line.end.y) / 2
   };
   return getHandleStyle(center);
+}
+
+const drawingTooltipText = computed(() => {
+  if (store.isAddingReferenceLine) {
+    if (!store.referenceLine) {
+      return store.t('drawStartRef');
+    }
+    return store.t('drawEndRef');
+  }
+  if (store.isAddingLine) {
+    if (!store.lines.length || store.lines[store.lines.length - 1].end) {
+      return store.t('drawStartLine');
+    }
+    return store.t('drawEndLine');
+  }
+  return '';
+});
+
+const drawingTooltipStyle = computed(() => {
+  if (!store.mousePos || !drawingTooltipText.value) {
+    return { display: 'none' };
+  }
+  const baseStyle = getHandleStyle(store.mousePos);
+  const left = parseFloat(baseStyle.left) + 15;
+  const top = parseFloat(baseStyle.top) + 15;
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    display: 'block'
+  };
+});
+
+function snapToAngle(startX: number, startY: number, x: number, y: number) {
+  const dx = x - startX;
+  const dy = y - startY;
+  const angle = Math.atan2(dy, dx);
+  const snappedAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+  const length = Math.sqrt(dx * dx + dy * dy);
+  return {
+    x: startX + Math.cos(snappedAngle) * length,
+    y: startY + Math.sin(snappedAngle) * length
+  };
 }
 </script>
 
@@ -1044,5 +1146,28 @@ function getLineCenterStyle(line: { start: Point; end?: Point | null }) {
 
 .canvas-delete-btn.reference-del-btn:hover {
   background: #c084fc;
+}
+
+.drawing-tooltip {
+  position: absolute;
+  background: rgba(18, 18, 18, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  color: #00f0ff;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  font-weight: 500;
+  transform: translate(0, 0);
+  transition: opacity 0.15s ease;
+}
+
+.drawing-tooltip.reference-tooltip {
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #c084fc;
 }
 </style>
