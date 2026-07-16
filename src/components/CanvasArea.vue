@@ -251,9 +251,32 @@ function handleResize() {
   updateCanvas();
 }
 
+function handleGlobalKeyDown(e: KeyboardEvent) {
+  // If the user is typing in an input field, do not trigger deletion
+  const tagName = document.activeElement?.tagName.toLowerCase();
+  if (tagName === 'input' || tagName === 'textarea' || document.activeElement?.hasAttribute('contenteditable')) {
+    return;
+  }
+
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (store.hoveredLineIndex !== null) {
+      e.preventDefault();
+      if (store.hoveredLineIndex === -1) {
+        store.removeReferenceLine();
+        store.hoveredLineIndex = null;
+      } else {
+        store.lines.splice(store.hoveredLineIndex, 1);
+        store.hoveredLineIndex = null;
+        store.requestCanvasUpdate();
+      }
+    }
+  }
+}
+
 onMounted(() => {
   window.addEventListener('resize', handleResize);
   window.addEventListener('keydown', handleKeyPan);
+  window.addEventListener('keydown', handleGlobalKeyDown);
   
   const canvas = canvasRef.value;
   if (canvas) {
@@ -269,6 +292,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
   window.removeEventListener('keydown', handleKeyPan);
+  window.removeEventListener('keydown', handleGlobalKeyDown);
   
   const canvas = canvasRef.value;
   if (canvas) {
