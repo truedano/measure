@@ -328,6 +328,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
             imageId: img.id,
             imageName: img.name,
             lineId: `Line ${index + 1}`,
+            lineIndex: index,
             lengthStr,
             line
           });

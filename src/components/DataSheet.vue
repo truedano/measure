@@ -54,7 +54,10 @@
           <tr 
             v-for="row in store.tableData" 
             :key="row.key" 
-            :class="{ 'active-image-row': row.imageId === store.currentImageId }"
+            :class="{ 
+              'active-image-row': row.imageId === store.currentImageId,
+              'hovered-row': store.hoveredLineIndex !== null && row.imageId === store.currentImageId && row.lineIndex === store.hoveredLineIndex
+            }"
           >
             <td class="cell-filename" :title="row.imageName">{{ row.imageName }}</td>
             <td>{{ row.lineId }}</td>
@@ -65,6 +68,7 @@
                 v-model="row.line.note" 
                 :placeholder="store.t('editNotePlaceholder')" 
                 class="table-note-input"
+                @change="store.requestCanvasUpdate()"
               >
             </td>
           </tr>
@@ -351,6 +355,21 @@ function copyTableData() {
 
 .active-image-row {
   background: rgba(0, 240, 255, 0.03);
+}
+
+.hovered-row {
+  background: rgba(0, 240, 255, 0.18) !important;
+  outline: 2px solid #00f0ff;
+  outline-offset: -2px;
+}
+
+.hovered-row td {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.hovered-row td:first-child {
+  box-shadow: inset 4px 0 0 #00f0ff;
 }
 
 .cell-filename {
