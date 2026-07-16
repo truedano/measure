@@ -112,20 +112,6 @@
           </div>
         </div>
 
-        <!-- Section: Canvas Preferences (Placeholder) -->
-        <div class="settings-section disabled">
-          <div class="settings-section-title">
-            <svg class="ui-icon section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M12 20h9"></path>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-            </svg>
-            {{ store.t('canvasSettings') }}
-          </div>
-          <div class="settings-row">
-            <span class="settings-label">Line Width</span>
-            <span class="coming-soon">Soon</span>
-          </div>
-        </div>
 
         <!-- Section: Data Management -->
         <div class="settings-section danger-zone">
@@ -474,15 +460,6 @@ button.active {
   color: #fff;
 }
 
-.coming-soon {
-  font-size: 9px;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.06);
-  color: #666;
-  padding: 2px 6px;
-  border-radius: 3px;
-  text-transform: uppercase;
-}
 
 .danger-action-btn {
   width: 100%;
