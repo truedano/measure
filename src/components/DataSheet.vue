@@ -1,5 +1,11 @@
 <template>
   <div id="table-panel">
+    <!-- Resizer bar at the top of the panel -->
+    <div 
+      class="table-resizer" 
+      :class="{ dragging: isDragging }"
+      @pointerdown="startResize"
+    ></div>
     <div class="panel-header">
       <h4>
         <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -74,8 +80,77 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import { useWorkspaceStore } from '../stores/workspaceStore';
+
 const store = useWorkspaceStore();
+
+const isDragging = ref(false);
+let startY = 0;
+let startHeight = 0;
+
+function startResize(e: PointerEvent) {
+  e.preventDefault();
+  isDragging.value = true;
+  startY = e.clientY;
+  
+  const panel = document.getElementById('table-panel');
+  if (panel) {
+    startHeight = panel.getBoundingClientRect().height;
+  }
+  
+  const resizer = e.currentTarget as HTMLElement;
+  resizer.setPointerCapture(e.pointerId);
+  
+  resizer.addEventListener('pointermove', handleResize);
+  resizer.addEventListener('pointerup', stopResize);
+  resizer.addEventListener('pointercancel', stopResize);
+}
+
+function handleResize(e: PointerEvent) {
+  if (!isDragging.value) return;
+  const deltaY = e.clientY - startY;
+  let newHeight = startHeight - deltaY;
+  
+  const minHeight = 48; // header height (only header is visible)
+  const maxHeight = window.innerHeight * 0.8; // max 80% of viewport
+  
+  if (newHeight < minHeight) newHeight = minHeight;
+  if (newHeight > maxHeight) newHeight = maxHeight;
+  
+  const container = document.getElementById('app-container');
+  if (container) {
+    container.style.setProperty('--table-height', `${newHeight}px`);
+  }
+  
+  store.requestCanvasUpdate();
+  localStorage.setItem('measure_table_height', `${newHeight}px`);
+}
+
+function stopResize(e: PointerEvent) {
+  isDragging.value = false;
+  const resizer = e.currentTarget as HTMLElement;
+  try {
+    resizer.releasePointerCapture(e.pointerId);
+  } catch (err) {
+    // Ignore potential errors
+  }
+  
+  resizer.removeEventListener('pointermove', handleResize);
+  resizer.removeEventListener('pointerup', stopResize);
+  resizer.removeEventListener('pointercancel', stopResize);
+}
+
+// Restore saved height on mount
+onMounted(() => {
+  const savedHeight = localStorage.getItem('measure_table_height');
+  if (savedHeight) {
+    const container = document.getElementById('app-container');
+    if (container) {
+      container.style.setProperty('--table-height', savedHeight);
+    }
+  }
+});
 
 function onFilterChange(event: Event) {
   const target = event.target as HTMLSelectElement;
@@ -107,6 +182,36 @@ function copyTableData() {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
+}
+
+.table-resizer {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+  z-index: 100;
+  background: transparent;
+  transition: background-color 0.2s;
+}
+
+.table-resizer:hover,
+.table-resizer.dragging {
+  background-color: rgba(0, 240, 255, 0.15);
+}
+
+.table-resizer:hover::after,
+.table-resizer.dragging::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #00f0ff;
+  box-shadow: 0 0 4px #00f0ff;
 }
 
 .panel-header {

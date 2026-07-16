@@ -48,7 +48,7 @@ body {
 #app-container {
   display: grid;
   grid-template-columns: 280px 1fr;
-  grid-template-rows: 52px 1fr 240px;
+  grid-template-rows: 52px 1fr var(--table-height, 240px);
   grid-template-areas:
     "toolbar toolbar"
     "sidebar main"
