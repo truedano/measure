@@ -169,7 +169,13 @@
                 @mouseenter="store.hoveredLineIndex = index; store.requestCanvasUpdate()"
                 @mouseleave="store.hoveredLineIndex = null; store.requestCanvasUpdate()"
               >
-                <span class="measure-label" :style="{ color: getColorForLine(index) }">L{{ index + 1 }}</span>
+                <span 
+                  class="measure-label" 
+                  :style="{ color: getColorForLine(index) }"
+                  :title="line.note ? `L${index + 1} (${line.note})` : `L${index + 1}`"
+                >
+                  L{{ index + 1 }}{{ line.note ? ` (${line.note})` : '' }}
+                </span>
                 <span class="measure-val">{{ getLineLength(line) }}</span>
                 <button class="delete-btn" @click="store.lines.splice(index, 1); store.requestCanvasUpdate()" :title="store.t('deleteLineTooltip')">
                   <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -764,6 +770,10 @@ function getHandleStyle(handle: Point) {
   font-size: 10px;
   color: #00f0ff;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
 }
 
 .measure-val {
