@@ -63,8 +63,8 @@
             }
           ]"
           @mousedown="startDraggingHandle($event, line, handleIndex + 1)"
-          @mouseenter="store.hoveredLineIndex = index; store.requestCanvasUpdate()"
-          @mouseleave="store.hoveredLineIndex = null; store.requestCanvasUpdate()"
+          @mouseenter="isHoveringOverlay = true; store.hoveredLineIndex = index; store.requestCanvasUpdate()"
+          @mouseleave="isHoveringOverlay = false; store.hoveredLineIndex = null; store.requestCanvasUpdate()"
         ></div>
       </div>
 
@@ -82,10 +82,52 @@
             }
           ]"
           @mousedown="startDraggingHandle($event, store.referenceLine, handleIndex + 1)"
-          @mouseenter="store.hoveredLineIndex = -1; store.requestCanvasUpdate()"
-          @mouseleave="store.hoveredLineIndex = null; store.requestCanvasUpdate()"
+          @mouseenter="isHoveringOverlay = true; store.hoveredLineIndex = -1; store.requestCanvasUpdate()"
+          @mouseleave="isHoveringOverlay = false; store.hoveredLineIndex = null; store.requestCanvasUpdate()"
         ></div>
       </div>
+
+      <!-- Canvas Line Delete Buttons -->
+      <template v-for="(line, index) in store.lines" :key="'canvas-del-' + index">
+        <button 
+          v-if="line.end && store.hoveredLineIndex === index" 
+          class="canvas-delete-btn"
+          :style="[
+            getLineCenterStyle(line),
+            {
+              backgroundColor: getColorForLine(index),
+              boxShadow: `0 0 8px ${getColorForLine(index)}`
+            }
+          ]"
+          @click.stop="store.lines.splice(index, 1); store.hoveredLineIndex = null; isHoveringOverlay = false; store.requestCanvasUpdate()"
+          @mousedown.stop
+          @mouseenter="isHoveringOverlay = true; store.hoveredLineIndex = index"
+          @mouseleave="isHoveringOverlay = false; store.hoveredLineIndex = null"
+          :title="store.t('deleteLineTooltip')"
+        >
+          <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </template>
+
+      <!-- Canvas Reference Line Delete Button -->
+      <button 
+        v-if="store.referenceLine && store.referenceLine.end && store.hoveredLineIndex === -1" 
+        class="canvas-delete-btn reference-del-btn"
+        :style="getLineCenterStyle(store.referenceLine)"
+        @click.stop="store.removeReferenceLine(); store.hoveredLineIndex = null; isHoveringOverlay = false;"
+        @mousedown.stop
+        @mouseenter="isHoveringOverlay = true; store.hoveredLineIndex = -1"
+        @mouseleave="isHoveringOverlay = false; store.hoveredLineIndex = null"
+        :title="store.t('deleteRefTooltip')"
+      >
+        <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
     </div>
 
     <!-- Measurements and Calibration Panel (Top Right Floating Panel) -->
@@ -224,6 +266,7 @@ const dragStartMouse = ref<Point | null>(null);
 const dragStartLinePoints = ref<{ start: Point; end: Point } | null>(null);
 const draggingLineRef = ref<Line | null>(null);
 const isPanelCollapsed = ref(false);
+const isHoveringOverlay = ref(false);
 
 // Composables
 const { getCanvasCoordinates, getLineLength, getColorForLine, updateCanvas, getDistanceToSegment } = useCanvasDraw(canvasRef);
@@ -311,6 +354,11 @@ function trackMouse(e: MouseEvent) {
   }
   
   if (currentHandle.value || isDraggingLine.value) return;
+
+  if (isHoveringOverlay.value) {
+    store.mousePos = { x, y };
+    return;
+  }
 
   let foundHoveredIndex: number | null = null;
   const threshold = 8 / store.zoomLevel;
@@ -540,6 +588,15 @@ function getHandleStyle(handle: Point) {
     left: `${left}px`,
     top: `${top}px`,
   };
+}
+
+function getLineCenterStyle(line: { start: Point; end?: Point | null }) {
+  if (!line.start || !line.end) return { display: 'none' };
+  const center = {
+    x: (line.start.x + line.end.x) / 2,
+    y: (line.start.y + line.end.y) / 2
+  };
+  return getHandleStyle(center);
 }
 </script>
 
@@ -948,5 +1005,44 @@ function getHandleStyle(handle: Point) {
 #controls .reset-btn:hover:not(:disabled) {
   background: #353535;
   color: white;
+}
+
+.canvas-delete-btn {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: #181818;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 15;
+  padding: 0;
+  pointer-events: auto;
+  transition: transform 0.1s ease, background-color 0.12s;
+}
+
+.canvas-delete-btn:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+}
+
+.canvas-delete-btn .ui-icon {
+  width: 10px;
+  height: 10px;
+  stroke-width: 3px;
+}
+
+.canvas-delete-btn.reference-del-btn {
+  background: #a855f7;
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.8);
+}
+
+.canvas-delete-btn.reference-del-btn:hover {
+  background: #c084fc;
 }
 </style>
