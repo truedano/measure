@@ -110,6 +110,35 @@
               <option value="en">English</option>
             </select>
           </div>
+          <div class="settings-row">
+            <span class="settings-label" :title="store.t('defaultReferenceLengthTooltip')">{{ store.t('defaultReferenceLength') }}</span>
+            <div class="settings-input-group">
+              <input
+                ref="refLengthInput"
+                type="number"
+                min="0"
+                step="0.1"
+                :value="refLengthDraft"
+                @input="onRefLengthInput"
+                @blur="commitRefLength"
+                @keydown.enter.prevent="onRefLengthEnter"
+                @keydown.esc.prevent="cancelRefLengthEdit"
+                class="settings-number-input"
+                :class="{ 'is-dirty': isRefLengthDirty }"
+                :title="store.t('defaultReferenceLengthTooltip')"
+              >
+              <span
+                v-if="refLengthStatus === 'saved'"
+                class="settings-status saved"
+                :title="store.t('settingsSavedToast')"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span v-else-if="refLengthStatus === 'dirty'" class="settings-status dirty">●</span>
+            </div>
+          </div>
         </div>
 
 
@@ -135,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useWorkspaceStore } from '../stores/workspaceStore';
 import pkg from '../../package.json';
 
@@ -144,6 +173,78 @@ const version = pkg.version;
 
 const isDropdownOpen = ref(false);
 const settingsRef = ref<HTMLElement | null>(null);
+
+// --- Draft state for the "Default Reference Length" input ---
+// We hold a local draft so we can show "dirty / saved" status and decide
+// when to actually persist the value (blur / Enter / dropdown close).
+const refLengthInput = ref<HTMLInputElement | null>(null);
+const refLengthDraft = ref<number>(store.defaultReferenceLength);
+
+watch(
+  () => store.defaultReferenceLength,
+  (newVal) => {
+    // External change (e.g. localStorage hydrates on first load) → resync draft
+    if (refLengthDraft.value !== newVal) {
+      refLengthDraft.value = newVal;
+    }
+  }
+);
+
+const isRefLengthDirty = computed(() => refLengthDraft.value !== store.defaultReferenceLength);
+const refLengthStatus = computed<'saved' | 'dirty' | 'idle'>(() => {
+  // 'idle' = user hasn't interacted yet and draft equals store value
+  return isRefLengthDirty.value ? 'dirty' : 'saved';
+});
+
+function onRefLengthInput(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const parsed = parseFloat(target.value);
+  refLengthDraft.value = Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function isValidRefLength(v: number): boolean {
+  return Number.isFinite(v) && v > 0;
+}
+
+function commitRefLength() {
+  // Called on blur / Enter / dropdown close. Always restores the visible
+  // input to a valid committed value (clamp on invalid input).
+  const draft = refLengthDraft.value;
+  if (isValidRefLength(draft)) {
+    if (draft !== store.defaultReferenceLength) {
+      store.setDefaultReferenceLength(draft);
+      store.showToast(store.t('settingsSavedToast'), 'success');
+    }
+    refLengthDraft.value = store.defaultReferenceLength;
+  } else {
+    // Invalid → revert draft to last committed value (no silent drop, no toast)
+    refLengthDraft.value = store.defaultReferenceLength;
+  }
+  nextTick(() => {
+    if (refLengthInput.value) {
+      refLengthInput.value.value = store.defaultReferenceLength.toString();
+    }
+  });
+}
+
+function onRefLengthEnter() {
+  // Enter should commit AND remove focus so the user sees the saved state.
+  refLengthInput.value?.blur();
+}
+
+function cancelRefLengthEdit() {
+  // Esc reverts the draft to the last committed value.
+  refLengthDraft.value = store.defaultReferenceLength;
+  refLengthInput.value?.blur();
+}
+
+// Commit any pending edit when the dropdown closes (covers the click-outside
+// case where the input might not have received blur before unmount).
+watch(isDropdownOpen, (open) => {
+  if (!open && isRefLengthDirty.value) {
+    commitRefLength();
+  }
+});
 
 function handleClickOutside(event: MouseEvent) {
   if (settingsRef.value && !settingsRef.value.contains(event.target as Node)) {
@@ -458,6 +559,58 @@ button.active {
 .settings-select:hover {
   border-color: #00f0ff;
   color: #fff;
+}
+
+.settings-number-input {
+  background: #252525;
+  border: 1px solid #444;
+  color: #eee;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  outline: none;
+  width: 80px;
+  transition: all 0.2s;
+}
+
+.settings-number-input:hover,
+.settings-number-input:focus {
+  border-color: #00f0ff;
+  color: #fff;
+}
+
+.settings-number-input.is-dirty {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.25) inset;
+}
+
+.settings-input-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+
+.settings-status.saved {
+  color: #10b981;
+}
+
+.settings-status.saved svg {
+  width: 12px;
+  height: 12px;
+}
+
+.settings-status.dirty {
+  color: #f59e0b;
+  font-size: 10px;
 }
 
 

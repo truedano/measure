@@ -490,7 +490,7 @@ function placeLine(e: MouseEvent) {
       store.referenceLine.handles.push({ x, y });
       store.isAddingReferenceLine = false;
       store.mousePos = null; // Clear preview
-      store.referenceLength = 1;
+      store.referenceLength = store.defaultReferenceLength;
       store.updateMeasurementLabels();
     }
   }

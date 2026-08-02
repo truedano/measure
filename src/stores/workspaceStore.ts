@@ -77,6 +77,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       dataManagement: '資料管理',
       resetWorkspace: '重設工作區資料',
       language: '顯示語言',
+      defaultReferenceLength: '基準線預設長度',
+      defaultReferenceLengthTooltip: '繪製參考線後自動填入的真實長度',
+      settingsSavedToast: '設定已儲存。',
     },
     en: {
       // Toolbar
@@ -150,6 +153,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       dataManagement: 'Data Management',
       resetWorkspace: 'Reset Workspace Data',
       language: 'Language',
+      defaultReferenceLength: 'Default Reference Length',
+      defaultReferenceLengthTooltip: 'The real length auto-filled after drawing a reference line',
+      settingsSavedToast: 'Settings saved.',
     }
   };
 
@@ -164,6 +170,21 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   function setLanguage(lang: 'zh' | 'en') {
     language.value = lang;
     localStorage.setItem('measure_lang', lang);
+  }
+
+  const DEFAULT_REFERENCE_LENGTH_KEY = 'measure_default_reference_length';
+  const FALLBACK_DEFAULT_REFERENCE_LENGTH = 25;
+  function loadDefaultReferenceLength(): number {
+    const raw = localStorage.getItem(DEFAULT_REFERENCE_LENGTH_KEY);
+    const parsed = raw === null ? NaN : parseFloat(raw);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : FALLBACK_DEFAULT_REFERENCE_LENGTH;
+  }
+  const defaultReferenceLength = ref<number>(loadDefaultReferenceLength());
+
+  function setDefaultReferenceLength(val: number) {
+    if (!Number.isFinite(val) || val <= 0) return;
+    defaultReferenceLength.value = val;
+    localStorage.setItem(DEFAULT_REFERENCE_LENGTH_KEY, val.toString());
   }
 
   function t(key: string, args?: Record<string, string | number>): string {
@@ -588,6 +609,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     selectedFolderFilter,
     language,
     setLanguage,
+    defaultReferenceLength,
+    setDefaultReferenceLength,
     t,
     isAddingLine,
     isAddingReferenceLine,
