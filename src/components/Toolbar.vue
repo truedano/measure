@@ -139,6 +139,23 @@
               <span v-else-if="refLengthStatus === 'dirty'" class="settings-status dirty">●</span>
             </div>
           </div>
+          <div class="settings-row">
+            <span class="settings-label" :title="store.t('defaultReferenceUnitTooltip')">{{ store.t('defaultReferenceUnit') }}</span>
+            <div class="settings-input-group">
+              <select
+                :value="store.defaultReferenceUnit"
+                @change="onDefaultUnitChange"
+                class="settings-select"
+                :title="store.t('defaultReferenceUnitTooltip')"
+              >
+                <option value="">none</option>
+                <option value="mm">mm</option>
+                <option value="cm">cm</option>
+                <option value="m">m</option>
+                <option value="in">in</option>
+              </select>
+            </div>
+          </div>
         </div>
 
 
@@ -236,6 +253,12 @@ function cancelRefLengthEdit() {
   // Esc reverts the draft to the last committed value.
   refLengthDraft.value = store.defaultReferenceLength;
   refLengthInput.value?.blur();
+}
+
+function onDefaultUnitChange(event: Event) {
+  const target = event.target as HTMLSelectElement;
+  store.setDefaultReferenceUnit(target.value);
+  store.showToast(store.t('settingsSavedToast'), 'success');
 }
 
 // Commit any pending edit when the dropdown closes (covers the click-outside

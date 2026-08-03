@@ -491,6 +491,7 @@ function placeLine(e: MouseEvent) {
       store.isAddingReferenceLine = false;
       store.mousePos = null; // Clear preview
       store.referenceLength = store.defaultReferenceLength;
+      store.unit = store.defaultReferenceUnit;
       store.updateMeasurementLabels();
     }
   }

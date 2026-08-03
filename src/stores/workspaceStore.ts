@@ -35,7 +35,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
       // CanvasArea
       measurementAndCalibration: '測量與校正',
-      scaleCalibration: '比例尺校正',
+      scaleCalibration: '參考線',
       enterActualLengthTooltip: '輸入參考線真實長度',
       lengthPlaceholder: '長度',
       selectUnitTooltip: '選擇長度單位',
@@ -77,8 +77,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       dataManagement: '資料管理',
       resetWorkspace: '重設工作區資料',
       language: '顯示語言',
-      defaultReferenceLength: '基準線預設長度',
+      defaultReferenceLength: '參考線預設長度',
       defaultReferenceLengthTooltip: '繪製參考線後自動填入的真實長度',
+      defaultReferenceUnit: '預設單位',
+      defaultReferenceUnitTooltip: '繪製參考線後自動填入的單位',
       settingsSavedToast: '設定已儲存。',
     },
     en: {
@@ -111,7 +113,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
       // CanvasArea
       measurementAndCalibration: 'Measurement & Calibration',
-      scaleCalibration: 'Scale Calibration',
+      scaleCalibration: 'Reference Line',
       enterActualLengthTooltip: 'Enter the actual length of the reference line',
       lengthPlaceholder: 'Length',
       selectUnitTooltip: 'Select length unit',
@@ -155,6 +157,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       language: 'Language',
       defaultReferenceLength: 'Default Reference Length',
       defaultReferenceLengthTooltip: 'The real length auto-filled after drawing a reference line',
+      defaultReferenceUnit: 'Default Unit',
+      defaultReferenceUnitTooltip: 'The unit auto-filled after drawing a reference line',
       settingsSavedToast: 'Settings saved.',
     }
   };
@@ -173,18 +177,31 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   const DEFAULT_REFERENCE_LENGTH_KEY = 'measure_default_reference_length';
+  const DEFAULT_REFERENCE_UNIT_KEY = 'measure_default_reference_unit';
   const FALLBACK_DEFAULT_REFERENCE_LENGTH = 25;
+  const VALID_UNITS = ['', 'mm', 'cm', 'm', 'in'];
   function loadDefaultReferenceLength(): number {
     const raw = localStorage.getItem(DEFAULT_REFERENCE_LENGTH_KEY);
     const parsed = raw === null ? NaN : parseFloat(raw);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : FALLBACK_DEFAULT_REFERENCE_LENGTH;
   }
+  function loadDefaultReferenceUnit(): string {
+    const raw = localStorage.getItem(DEFAULT_REFERENCE_UNIT_KEY);
+    return raw !== null && VALID_UNITS.includes(raw) ? raw : 'mm';
+  }
   const defaultReferenceLength = ref<number>(loadDefaultReferenceLength());
+  const defaultReferenceUnit = ref<string>(loadDefaultReferenceUnit());
 
   function setDefaultReferenceLength(val: number) {
     if (!Number.isFinite(val) || val <= 0) return;
     defaultReferenceLength.value = val;
     localStorage.setItem(DEFAULT_REFERENCE_LENGTH_KEY, val.toString());
+  }
+
+  function setDefaultReferenceUnit(val: string) {
+    if (!VALID_UNITS.includes(val)) return;
+    defaultReferenceUnit.value = val;
+    localStorage.setItem(DEFAULT_REFERENCE_UNIT_KEY, val);
   }
 
   function t(key: string, args?: Record<string, string | number>): string {
@@ -611,6 +628,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     setLanguage,
     defaultReferenceLength,
     setDefaultReferenceLength,
+    defaultReferenceUnit,
+    setDefaultReferenceUnit,
     t,
     isAddingLine,
     isAddingReferenceLine,
