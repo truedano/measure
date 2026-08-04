@@ -86,8 +86,77 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     ctx.stroke();
   }
 
+  function getRectangleCorners(start: Point, end: Point, height: number) {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const baseLen = Math.sqrt(dx * dx + dy * dy);
+    if (baseLen === 0) {
+      return [
+        { x: start.x, y: start.y },
+        { x: end.x, y: end.y },
+        { x: end.x, y: end.y },
+        { x: start.x, y: start.y }
+      ];
+    }
+    // Perpendicular unit vector (-dy/baseLen, dx/baseLen)
+    const ux = -dy / baseLen;
+    const uy = dx / baseLen;
+
+    const p1 = { x: start.x, y: start.y };
+    const p2 = { x: end.x, y: end.y };
+    const p3 = { x: end.x + ux * height, y: end.y + uy * height };
+    const p4 = { x: start.x + ux * height, y: start.y + uy * height };
+
+    return [p1, p2, p3, p4];
+  }
+
+  function drawRectangle(ctx: CanvasRenderingContext2D, line: Line, color: string, isHovered = false) {
+    if (!line.end) return;
+    const height = line.height || 0;
+    const corners = getRectangleCorners(line.start, line.end, height);
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = (isHovered ? 4 : 2) / store.zoomLevel;
+
+    if (isHovered) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 10 / store.zoomLevel;
+    }
+
+    // Fill transparent background
+    ctx.fillStyle = color.startsWith('#') 
+      ? `${color}22` 
+      : 'rgba(0, 240, 255, 0.15)';
+
+    ctx.beginPath();
+    ctx.moveTo(corners[0].x, corners[0].y);
+    ctx.lineTo(corners[1].x, corners[1].y);
+    ctx.lineTo(corners[2].x, corners[2].y);
+    ctx.lineTo(corners[3].x, corners[3].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+
+    // Sync handles positions for 4 corners if needed
+    if (line.handles.length < 4) {
+      line.handles = corners.map(p => ({ ...p }));
+    } else {
+      for (let i = 0; i < 4; i++) {
+        line.handles[i].x = corners[i].x;
+        line.handles[i].y = corners[i].y;
+      }
+    }
+  }
+
   function drawLine(ctx: CanvasRenderingContext2D, line: Line, color: string, isHovered = false) {
     if (!line.end) return;
+    if (line.type === 'rectangle') {
+      drawRectangle(ctx, line, color, isHovered);
+      return;
+    }
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = (isHovered ? 4 : 2) / store.zoomLevel; // Keep line width visually consistent
@@ -105,10 +174,14 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     ctx.restore();
     
     // Sync handles positions
-    line.handles[0].x = line.start.x;
-    line.handles[0].y = line.start.y;
-    line.handles[1].x = line.end.x;
-    line.handles[1].y = line.end.y;
+    if (line.handles.length < 2) {
+      line.handles = [{ ...line.start }, { ...line.end }];
+    } else {
+      line.handles[0].x = line.start.x;
+      line.handles[0].y = line.start.y;
+      line.handles[1].x = line.end.x;
+      line.handles[1].y = line.end.y;
+    }
   }
 
   function drawPreviewLine(ctx: CanvasRenderingContext2D, start: Point, end: Point, color: string) {
@@ -162,6 +235,26 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     ctx.restore();
   }
 
+  function drawPreviewRectangle(ctx: CanvasRenderingContext2D, start: Point, end: Point, height: number, color: string) {
+    const corners = getRectangleCorners(start, end, height);
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5 / store.zoomLevel;
+    ctx.setLineDash([5 / store.zoomLevel, 5 / store.zoomLevel]);
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
+
+    ctx.beginPath();
+    ctx.moveTo(corners[0].x, corners[0].y);
+    ctx.lineTo(corners[1].x, corners[1].y);
+    ctx.lineTo(corners[2].x, corners[2].y);
+    ctx.lineTo(corners[3].x, corners[3].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
   function updateCanvas() {
     const canvas = canvasRef.value;
     if (!canvas) return;
@@ -210,11 +303,28 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
         }
       });
 
-      // Draw preview dashed line if currently adding a line
+      // Draw preview line or rectangle if currently adding
       if (store.mousePos) {
         if (store.isAddingLine && store.lines.length > 0 && !store.lines[store.lines.length - 1].end) {
           const activeLine = store.lines[store.lines.length - 1];
           drawPreviewLine(ctx, activeLine.start, store.mousePos, '#00f0ff');
+        } else if (store.isAddingRectangle && store.lines.length > 0) {
+          const activeLine = store.lines[store.lines.length - 1];
+          if (!activeLine.end) {
+            drawPreviewLine(ctx, activeLine.start, store.mousePos, '#00f0ff');
+          } else if (store.rectangleStep === 2) {
+            const dx = activeLine.end.x - activeLine.start.x;
+            const dy = activeLine.end.y - activeLine.start.y;
+            const baseLen = Math.sqrt(dx * dx + dy * dy);
+            if (baseLen > 0) {
+              const ux = -dy / baseLen;
+              const uy = dx / baseLen;
+              const vx = store.mousePos.x - activeLine.start.x;
+              const vy = store.mousePos.y - activeLine.start.y;
+              const height = vx * ux + vy * uy;
+              drawPreviewRectangle(ctx, activeLine.start, activeLine.end, height, '#00f0ff');
+            }
+          }
         } else if (store.isAddingReferenceLine && store.referenceLine && !store.referenceLine.end) {
           drawPreviewLine(ctx, store.referenceLine.start, store.mousePos, '#a855f7');
         }
@@ -239,6 +349,16 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     return Math.sqrt((p.x - closestX) ** 2 + (p.y - closestY) ** 2);
   }
 
+  function getDistanceToRectangle(p: Point, line: Line): number {
+    if (!line.end) return Infinity;
+    const corners = getRectangleCorners(line.start, line.end, line.height || 0);
+    const d1 = getDistanceToSegment(p, corners[0], corners[1]);
+    const d2 = getDistanceToSegment(p, corners[1], corners[2]);
+    const d3 = getDistanceToSegment(p, corners[2], corners[3]);
+    const d4 = getDistanceToSegment(p, corners[3], corners[0]);
+    return Math.min(d1, d2, d3, d4);
+  }
+
   return {
     getCanvasCoordinates,
     calculateLineLength,
@@ -246,7 +366,9 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     getColorForLine,
     LINE_COLORS,
     updateCanvas,
-    getDistanceToSegment
+    getDistanceToSegment,
+    getDistanceToRectangle,
+    getRectangleCorners
   };
 }
 

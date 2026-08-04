@@ -12,9 +12,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       removeRef: '移除參考線',
       measureLabel: '測量：',
       addLine: '新增線段',
+      addRectangle: '新增矩形',
       clearLines: '清除線段',
       calibrateTooltip: '請先在步驟 1 校正比例尺',
       addLineTooltip: '新增測量線',
+      addRectangleTooltip: '新增測量矩形',
       
       // Sidebar
       filesAndGroups: '檔案與分組',
@@ -48,6 +50,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       drawEndRef: '點擊完成參考線 (按 Shift 鎖定角度)',
       drawStartLine: '點擊設置線段起點',
       drawEndLine: '點擊完成線段 (按 Shift 鎖定角度)',
+      drawStartRectangle: '點擊設置矩形基準邊起點',
+      drawEndRectangleBase: '點擊完成基準邊 (按 Shift 鎖定角度)',
+      drawRectangleHeight: '移動滑鼠調整厚度，點擊完成矩形',
 
       // DataSheet
       measurementDataSheet: '測量數據表',
@@ -90,9 +95,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       removeRef: 'Remove Ref',
       measureLabel: 'Measure:',
       addLine: 'Add Line',
+      addRectangle: 'Add Rectangle',
       clearLines: 'Clear Lines',
       calibrateTooltip: 'Please calibrate scale in Step 1 first',
       addLineTooltip: 'Add measurement line',
+      addRectangleTooltip: 'Add measurement rectangle',
       
       // Sidebar
       filesAndGroups: 'Files & Groups',
@@ -126,6 +133,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       drawEndRef: 'Click to complete reference line (Hold Shift to snap)',
       drawStartLine: 'Click to set line start',
       drawEndLine: 'Click to complete line (Hold Shift to snap)',
+      drawStartRectangle: 'Click to set rectangle base start',
+      drawEndRectangleBase: 'Click to set rectangle base end (Hold Shift to snap)',
+      drawRectangleHeight: 'Move mouse to adjust width, click to complete rectangle',
 
       // DataSheet
       measurementDataSheet: 'Measurement Data Sheet',
@@ -216,6 +226,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   const isAddingLine = ref(false);
+  const isAddingRectangle = ref(false);
+  const rectangleStep = ref<0 | 1 | 2>(0);
   const isAddingReferenceLine = ref(false);
   const triggerCanvasUpdate = ref(0);
   const hoveredLineIndex = ref<number | null>(null);
@@ -365,15 +377,25 @@ export const useWorkspaceStore = defineStore('workspace', () => {
           const dx = line.end.x - line.start.x;
           const dy = line.end.y - line.start.y;
           const pxLength = Math.sqrt(dx * dx + dy * dy);
-          const lengthStr = img.scale !== 1 
-            ? `${(pxLength * img.scale).toFixed(2)} ${img.unit}` 
-            : `${pxLength.toFixed(2)} px`;
+          let lengthStr = '';
+          if (line.type === 'rectangle') {
+            const pxHeight = Math.abs(line.height || 0);
+            if (img.scale !== 1) {
+              lengthStr = `${(pxLength * img.scale).toFixed(2)} × ${(pxHeight * img.scale).toFixed(2)} ${img.unit}`;
+            } else {
+              lengthStr = `${pxLength.toFixed(2)} × ${pxHeight.toFixed(2)} px`;
+            }
+          } else {
+            lengthStr = img.scale !== 1 
+              ? `${(pxLength * img.scale).toFixed(2)} ${img.unit}` 
+              : `${pxLength.toFixed(2)} px`;
+          }
           
           data.push({
             key: `${img.id}-${index}`,
             imageId: img.id,
             imageName: img.name,
-            lineId: `Line ${index + 1}`,
+            lineId: line.type === 'rectangle' ? `Rect ${index + 1}` : `Line ${index + 1}`,
             lineIndex: index,
             lengthStr,
             line
@@ -394,6 +416,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   function switchImage(id: string) {
     currentImageId.value = id;
     isAddingLine.value = false;
+    isAddingRectangle.value = false;
+    rectangleStep.value = 0;
     isAddingReferenceLine.value = false;
     requestCanvasUpdate();
   }
@@ -415,9 +439,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   }
 
-  function startDrawing(type: 'measurement' | 'reference') {
+  function startDrawing(type: 'measurement' | 'reference' | 'rectangle') {
     if (!currentImageId.value) return;
     isAddingLine.value = type === 'measurement';
+    isAddingRectangle.value = type === 'rectangle';
+    rectangleStep.value = type === 'rectangle' ? 1 : 0;
     isAddingReferenceLine.value = type === 'reference';
   }
 
@@ -632,6 +658,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     setDefaultReferenceUnit,
     t,
     isAddingLine,
+    isAddingRectangle,
+    rectangleStep,
     isAddingReferenceLine,
     triggerCanvasUpdate,
     hoveredLineIndex,

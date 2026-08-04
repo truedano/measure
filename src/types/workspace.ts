@@ -8,6 +8,8 @@ export interface Line {
   end: Point | null;
   note?: string;
   handles: Point[];
+  type?: 'line' | 'rectangle';
+  height?: number; // Distance/width perpendicular to start-end vector for rectangle
 }
 
 export interface Folder {

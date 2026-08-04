@@ -279,7 +279,7 @@ const isPanelCollapsed = ref(false);
 const isHoveringOverlay = ref(false);
 
 // Composables
-const { getCanvasCoordinates, getLineLength, getColorForLine, updateCanvas, getDistanceToSegment } = useCanvasDraw(canvasRef);
+const { getCanvasCoordinates, getLineLength, getColorForLine, updateCanvas, getDistanceToSegment, getDistanceToRectangle } = useCanvasDraw(canvasRef);
 const {
   isPanning,
   zoomIn,
@@ -373,10 +373,12 @@ function trackMouse(e: MouseEvent) {
   if (!store.currentImageId) return;
   let { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
   
-  if (store.isAddingLine || store.isAddingReferenceLine) {
+  if (store.isAddingLine || store.isAddingRectangle || store.isAddingReferenceLine) {
     if (e.shiftKey) {
       let startPoint = null;
       if (store.isAddingLine && store.lines.length > 0 && !store.lines[store.lines.length - 1].end) {
+        startPoint = store.lines[store.lines.length - 1].start;
+      } else if (store.isAddingRectangle && store.lines.length > 0 && store.rectangleStep === 1) {
         startPoint = store.lines[store.lines.length - 1].start;
       } else if (store.isAddingReferenceLine && store.referenceLine && !store.referenceLine.end) {
         startPoint = store.referenceLine.start;
@@ -410,12 +412,14 @@ function trackMouse(e: MouseEvent) {
     }
   }
 
-  // Check measurement lines
+  // Check measurement lines & rectangles
   if (foundHoveredIndex === null) {
     for (let i = store.lines.length - 1; i >= 0; i--) {
       const line = store.lines[i];
       if (line.end) {
-        const dist = getDistanceToSegment({ x, y }, line.start, line.end);
+        const dist = line.type === 'rectangle'
+          ? getDistanceToRectangle({ x, y }, line)
+          : getDistanceToSegment({ x, y }, line.start, line.end);
         if (dist <= threshold) {
           foundHoveredIndex = i;
           break;
@@ -437,7 +441,7 @@ function clearMouse() {
   }
 }
 
-// Click to draw line
+// Click to draw line or rectangle
 function placeLine(e: MouseEvent) {
   if (!store.currentImageId) return;
   
@@ -455,7 +459,8 @@ function placeLine(e: MouseEvent) {
         start: { x, y },
         end: null,
         handles: [{ x, y }],
-        note: ''
+        note: '',
+        type: 'line'
       });
     } else {
       // End current line
@@ -470,6 +475,52 @@ function placeLine(e: MouseEvent) {
       store.isAddingLine = false;
       store.mousePos = null; // Clear preview
       store.requestCanvasUpdate();
+    }
+  } else if (store.isAddingRectangle) {
+    if (store.rectangleStep === 1) {
+      if (!store.lines.length || store.lines[store.lines.length - 1].end) {
+        // Step 1a: Click start of rectangle base line
+        store.lines.push({
+          start: { x, y },
+          end: null,
+          handles: [{ x, y }],
+          note: '',
+          type: 'rectangle',
+          height: 0
+        });
+      } else {
+        // Step 1b: Click end of rectangle base line
+        const currentLine = store.lines[store.lines.length - 1];
+        if (e.shiftKey) {
+          const snapped = snapToAngle(currentLine.start.x, currentLine.start.y, x, y);
+          x = snapped.x;
+          y = snapped.y;
+        }
+        currentLine.end = { x, y };
+        store.rectangleStep = 2; // Move to height selection step
+        store.requestCanvasUpdate();
+      }
+    } else if (store.rectangleStep === 2) {
+      // Step 2: Click to set perpendicular height/width
+      const currentLine = store.lines[store.lines.length - 1];
+      if (currentLine && currentLine.end) {
+        const dx = currentLine.end.x - currentLine.start.x;
+        const dy = currentLine.end.y - currentLine.start.y;
+        const baseLen = Math.sqrt(dx * dx + dy * dy);
+        if (baseLen > 0) {
+          const ux = -dy / baseLen;
+          const uy = dx / baseLen;
+          const vx = x - currentLine.start.x;
+          const vy = y - currentLine.start.y;
+          currentLine.height = vx * ux + vy * uy;
+        } else {
+          currentLine.height = 0;
+        }
+        store.isAddingRectangle = false;
+        store.rectangleStep = 0;
+        store.mousePos = null;
+        store.requestCanvasUpdate();
+      }
     }
   } else if (store.isAddingReferenceLine) {
     if (!store.referenceLine) {
@@ -672,6 +723,16 @@ const drawingTooltipText = computed(() => {
       return store.t('drawStartLine');
     }
     return store.t('drawEndLine');
+  }
+  if (store.isAddingRectangle) {
+    if (store.rectangleStep === 1) {
+      if (!store.lines.length || store.lines[store.lines.length - 1].end) {
+        return store.t('drawStartRectangle');
+      }
+      return store.t('drawEndRectangleBase');
+    } else if (store.rectangleStep === 2) {
+      return store.t('drawRectangleHeight');
+    }
   }
   return '';
 });

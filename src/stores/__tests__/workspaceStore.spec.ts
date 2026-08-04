@@ -268,4 +268,43 @@ describe('useWorkspaceStore', () => {
     delete store.images[0].rotation;
     expect(store.rotation).toBe(0);
   });
+
+  it('supports rectangle measurement mode and table formatting', () => {
+    const store = useWorkspaceStore();
+    const mockImg: any = {
+      id: 'img-1',
+      name: 'test.png',
+      src: '',
+      imgObject: null,
+      lines: [
+        {
+          start: { x: 0, y: 0 },
+          end: { x: 40, y: 0 }, // Base length 40px
+          handles: [],
+          type: 'rectangle',
+          height: 30, // Width 30px
+          note: 'Box'
+        }
+      ],
+      referenceLine: null,
+      referenceLength: 0,
+      unit: 'mm',
+      scale: 1,
+      dpi: '',
+      zoomLevel: 1,
+      panX: 0,
+      panY: 0
+    };
+
+    store.images.push(mockImg);
+    store.switchImage('img-1');
+
+    store.startDrawing('rectangle');
+    expect(store.isAddingRectangle).toBe(true);
+    expect(store.rectangleStep).toBe(1);
+
+    expect(store.tableData.length).toBe(1);
+    expect(store.tableData[0].lineId).toBe('Rect 1');
+    expect(store.tableData[0].lengthStr).toBe('40.00 × 30.00 px');
+  });
 });

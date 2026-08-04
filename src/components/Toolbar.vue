@@ -66,6 +66,17 @@
         {{ store.t('addLine') }}
       </button>
       <button 
+        @click="store.startDrawing('rectangle')" 
+        :class="{ active: store.isAddingRectangle }" 
+        :disabled="!store.currentImageId || store.scale === 1"
+        :title="store.scale === 1 ? store.t('calibrateTooltip') : store.t('addRectangleTooltip')"
+      >
+        <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        </svg>
+        {{ store.t('addRectangle') }}
+      </button>
+      <button 
         @click="store.removeAll" 
         :disabled="!store.currentImageId"
       >
