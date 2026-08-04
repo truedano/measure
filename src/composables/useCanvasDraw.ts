@@ -140,13 +140,20 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
 
     ctx.restore();
 
-    // Sync handles positions for 4 corners if needed
-    if (line.handles.length < 4) {
-      line.handles = corners.map(p => ({ ...p }));
+    // Compute 4 corner handles and 4 edge midpoint handles (total 8 handles)
+    const m1 = { x: (corners[0].x + corners[1].x) / 2, y: (corners[0].y + corners[1].y) / 2 };
+    const m2 = { x: (corners[1].x + corners[2].x) / 2, y: (corners[1].y + corners[2].y) / 2 };
+    const m3 = { x: (corners[2].x + corners[3].x) / 2, y: (corners[2].y + corners[3].y) / 2 };
+    const m4 = { x: (corners[3].x + corners[0].x) / 2, y: (corners[3].y + corners[0].y) / 2 };
+
+    const handlesList = [corners[0], corners[1], corners[2], corners[3], m1, m2, m3, m4];
+
+    if (line.handles.length < 8) {
+      line.handles = handlesList.map(p => ({ ...p }));
     } else {
-      for (let i = 0; i < 4; i++) {
-        line.handles[i].x = corners[i].x;
-        line.handles[i].y = corners[i].y;
+      for (let i = 0; i < 8; i++) {
+        line.handles[i].x = handlesList[i].x;
+        line.handles[i].y = handlesList[i].y;
       }
     }
   }

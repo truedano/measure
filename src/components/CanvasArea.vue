@@ -560,26 +560,89 @@ function startDraggingHandle(e: MouseEvent, line: Line, handleIndex: number) {
 function dragHandle(e: MouseEvent) {
   if (!currentHandle.value) return;
   let { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
-  
-  if (e.shiftKey) {
-    const otherPoint = currentHandle.value.handleIndex === 1
-      ? currentHandle.value.line.end
-      : currentHandle.value.line.start;
-    if (otherPoint) {
-      const snapped = snapToAngle(otherPoint.x, otherPoint.y, x, y);
-      x = snapped.x;
-      y = snapped.y;
+  const line = currentHandle.value.line;
+  const idx = currentHandle.value.handleIndex; // 1-based index
+
+  if (line.type === 'rectangle' && line.end) {
+    // Advanced 8-handle rectangle geometry vector resizing
+    const start = line.start;
+    const end = line.end;
+    const currentHeight = line.height || 0;
+
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const baseLen = Math.sqrt(dx * dx + dy * dy);
+
+    if (baseLen > 0) {
+      // Base unit vector v0 along start->end, perpendicular unit vector u perp to v0
+      const v0x = dx / baseLen;
+      const v0y = dy / baseLen;
+      const ux = -v0y;
+      const uy = v0x;
+
+      if (idx === 1) { // Corner 1 (p1: start)
+        // Adjust start along base vector and height
+        const projV = (x - end.x) * v0x + (y - end.y) * v0y; // new length from end
+        line.start = { x: end.x + v0x * projV, y: end.y + v0y * projV };
+        const projU = (x - end.x) * ux + (y - end.y) * uy;
+        line.height = projU;
+      } else if (idx === 2) { // Corner 2 (p2: end)
+        // Adjust end along base vector and height
+        const projV = (x - start.x) * v0x + (y - start.y) * v0y; // new length from start
+        line.end = { x: start.x + v0x * projV, y: start.y + v0y * projV };
+        const projU = (x - start.x) * ux + (y - start.y) * uy;
+        line.height = projU;
+      } else if (idx === 3) { // Corner 3 (p3: end + u*height)
+        // Adjust end and height
+        const projV = (x - start.x) * v0x + (y - start.y) * v0y;
+        line.end = { x: start.x + v0x * projV, y: start.y + v0y * projV };
+        const projU = (x - start.x) * ux + (y - start.y) * uy;
+        line.height = projU;
+      } else if (idx === 4) { // Corner 4 (p4: start + u*height)
+        // Adjust start and height
+        const projV = (x - end.x) * v0x + (y - end.y) * v0y;
+        line.start = { x: end.x + v0x * projV, y: end.y + v0y * projV };
+        const projU = (x - end.x) * ux + (y - end.y) * uy;
+        line.height = projU;
+      } else if (idx === 5) { // Midpoint 1 (m1: start-end base)
+        // Base line position shift (parallel shift)
+        const midX = (start.x + end.x) / 2;
+        const midY = (start.y + end.y) / 2;
+        const projU = (x - midX) * ux + (y - midY) * uy;
+        // Shift base line along u, reduce height
+        line.start = { x: start.x + ux * projU, y: start.y + uy * projU };
+        line.end = { x: end.x + ux * projU, y: end.y + uy * projU };
+        line.height = currentHeight - projU;
+      } else if (idx === 6) { // Midpoint 2 (m2: right edge p2-p3)
+        // Adjust end along base vector (changes length)
+        const projV = (x - start.x) * v0x + (y - start.y) * v0y;
+        line.end = { x: start.x + v0x * projV, y: start.y + v0y * projV };
+      } else if (idx === 7) { // Midpoint 3 (m3: top edge p3-p4)
+        // Adjust height only
+        const projU = (x - start.x) * ux + (y - start.y) * uy;
+        line.height = projU;
+      } else if (idx === 8) { // Midpoint 4 (m4: left edge p4-p1)
+        // Adjust start along base vector (changes length)
+        const projV = (x - end.x) * v0x + (y - end.y) * v0y;
+        line.start = { x: end.x + v0x * projV, y: end.y + v0y * projV };
+      }
     }
-  }
-  
-  const handle = currentHandle.value.line.handles[currentHandle.value.handleIndex - 1];
-  handle.x = x;
-  handle.y = y;
-  
-  if (currentHandle.value.handleIndex === 1) {
-    currentHandle.value.line.start = { x, y };
   } else {
-    currentHandle.value.line.end = { x, y };
+    // Normal Line dragging
+    if (e.shiftKey) {
+      const otherPoint = idx === 1 ? line.end : line.start;
+      if (otherPoint) {
+        const snapped = snapToAngle(otherPoint.x, otherPoint.y, x, y);
+        x = snapped.x;
+        y = snapped.y;
+      }
+    }
+    
+    if (idx === 1) {
+      line.start = { x, y };
+    } else {
+      line.end = { x, y };
+    }
   }
   
   store.updateMeasurementLabels();
