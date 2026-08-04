@@ -96,6 +96,72 @@ describe('useCanvasDraw', () => {
     expect(coords.y).toBeCloseTo(100, 4);
   });
 
+  it('handles exportViewportImage safely without crashing when no image loaded', () => {
+    const canvasRef = ref<HTMLCanvasElement | null>(null);
+    const { exportViewportImage } = useCanvasDraw(canvasRef);
+    expect(() => exportViewportImage()).not.toThrow();
+  });
+
+  it('exports viewport image safely with mock canvas and image loaded', () => {
+    const mockCtx: any = {
+      fillRect: () => {},
+      save: () => {},
+      restore: () => {},
+      scale: () => {},
+      translate: () => {},
+      rotate: () => {},
+      drawImage: () => {},
+      beginPath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      stroke: () => {},
+      fill: () => {},
+      closePath: () => {},
+      measureText: () => ({ width: 40 }),
+      fillText: () => {},
+      rect: () => {},
+      roundRect: () => {},
+      setLineDash: () => {},
+    };
+    HTMLCanvasElement.prototype.getContext = (() => mockCtx) as any;
+    HTMLCanvasElement.prototype.toDataURL = (() => 'data:image/png;base64,mock') as any;
+
+    const mockCanvas = document.createElement('canvas');
+    mockCanvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: 800, height: 600 } as any);
+    Object.defineProperty(mockCanvas, 'clientWidth', { value: 800 });
+    Object.defineProperty(mockCanvas, 'clientHeight', { value: 600 });
+
+    const canvasRef = ref<HTMLCanvasElement | null>(mockCanvas);
+    const store = useWorkspaceStore();
+    const { exportViewportImage } = useCanvasDraw(canvasRef);
+
+    const mockImg: any = {
+      id: 'img-1',
+      name: 'test_photo.png',
+      src: 'data:image/png;base64,',
+      imgObject: document.createElement('img'),
+      lines: [
+        { start: { x: 10, y: 10 }, end: { x: 50, y: 50 }, handles: [], type: 'line' },
+        { start: { x: 20, y: 20 }, end: { x: 60, y: 60 }, height: 30, handles: [], type: 'rectangle' }
+      ],
+      referenceLine: { start: { x: 0, y: 0 }, end: { x: 100, y: 0 }, handles: [] },
+      referenceLength: 10,
+      unit: 'mm',
+      scale: 0.1,
+      dpi: '100',
+      zoomLevel: 1,
+      panX: 0,
+      panY: 0,
+      rotation: 0
+    };
+
+    store.images.push(mockImg);
+    store.switchImage('img-1');
+
+    expect(() => exportViewportImage('test_output.png')).not.toThrow();
+    expect(store.toast.show).toBe(true);
+  });
+
   it('calculates distance from point to segment correctly', () => {
     const canvasRef = ref<HTMLCanvasElement | null>(null);
     const { getDistanceToSegment } = useCanvasDraw(canvasRef);

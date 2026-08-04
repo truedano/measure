@@ -87,6 +87,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       defaultReferenceUnit: '預設單位',
       defaultReferenceUnitTooltip: '繪製參考線後自動填入的單位',
       settingsSavedToast: '設定已儲存。',
+      exportImage: '匯出圖片',
+      exportTooltip: '將畫布當前視角畫面另存為圖片',
+      exportSuccessToast: '畫布圖片已成功匯出！',
     },
     en: {
       // Toolbar
@@ -100,6 +103,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       calibrateTooltip: 'Please calibrate scale in Step 1 first',
       addLineTooltip: 'Add measurement line',
       addRectangleTooltip: 'Add measurement rectangle',
+      exportImage: 'Export Image',
+      exportTooltip: 'Save current canvas view as image',
+      exportSuccessToast: 'Canvas image exported successfully!',
       
       // Sidebar
       filesAndGroups: 'Files & Groups',
@@ -230,6 +236,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const rectangleStep = ref<0 | 1 | 2>(0);
   const isAddingReferenceLine = ref(false);
   const triggerCanvasUpdate = ref(0);
+  const triggerExportCanvas = ref(0);
   const hoveredLineIndex = ref<number | null>(null);
 
   let dbSyncTimeout: any = null;
@@ -411,6 +418,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   function requestCanvasUpdate() {
     triggerCanvasUpdate.value++;
     triggerDBSync();
+  }
+
+  function requestExportCanvasImage() {
+    triggerExportCanvas.value++;
   }
 
   function switchImage(id: string) {
@@ -662,6 +673,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     rectangleStep,
     isAddingReferenceLine,
     triggerCanvasUpdate,
+    triggerExportCanvas,
     hoveredLineIndex,
     modal,
     toast,
@@ -679,6 +691,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     tableData,
     hasMeasurements,
     requestCanvasUpdate,
+    requestExportCanvasImage,
     switchImage,
     deleteImage,
     startDrawing,

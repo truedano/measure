@@ -88,6 +88,23 @@
       </button>
     </div>
 
+    <!-- Export Image Action -->
+    <div class="step-container">
+      <button 
+        @click="store.requestExportCanvasImage" 
+        :disabled="!store.currentImageId"
+        class="export-btn"
+        :title="store.t('exportTooltip')"
+      >
+        <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        {{ store.t('exportImage') }}
+      </button>
+    </div>
+
     <!-- Settings Panel -->
     <div class="settings-container" ref="settingsRef">
       <button 
@@ -440,6 +457,18 @@ button.active {
   background: rgba(168, 85, 247, 0.2);
   border-color: #a855f7;
   color: #c084fc;
+}
+
+button.export-btn {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+
+button.export-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
 }
 
 .dpi-input {

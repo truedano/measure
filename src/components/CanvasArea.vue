@@ -279,7 +279,7 @@ const isPanelCollapsed = ref(false);
 const isHoveringOverlay = ref(false);
 
 // Composables
-const { getCanvasCoordinates, getLineLength, getColorForLine, updateCanvas, getDistanceToSegment, getDistanceToRectangle } = useCanvasDraw(canvasRef);
+const { getCanvasCoordinates, getLineLength, getColorForLine, updateCanvas, exportViewportImage, getDistanceToSegment, getDistanceToRectangle } = useCanvasDraw(canvasRef);
 const {
   isPanning,
   zoomIn,
@@ -297,6 +297,11 @@ const {
 // Watch stores data changes to update canvas
 watch(() => store.triggerCanvasUpdate, () => {
   updateCanvas();
+});
+
+// Watch triggerExportCanvas to export current viewport as image
+watch(() => store.triggerExportCanvas, () => {
+  exportViewportImage();
 });
 
 // Update canvas resize offset

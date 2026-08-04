@@ -366,6 +366,127 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     return Math.min(d1, d2, d3, d4);
   }
 
+  function drawLabelBox(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    centerX: number,
+    centerY: number,
+    color: string,
+    zoomLevel: number
+  ) {
+    ctx.save();
+    const fontSize = 12 / zoomLevel;
+    ctx.font = `bold ${fontSize}px Outfit, Inter, sans-serif`;
+    const textWidth = ctx.measureText(text).width;
+    const paddingX = 6 / zoomLevel;
+    const boxWidth = textWidth + paddingX * 2;
+    const boxHeight = 18 / zoomLevel;
+
+    const rectX = centerX - boxWidth / 2;
+    const rectY = centerY - boxHeight / 2;
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5 / zoomLevel;
+
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(rectX, rectY, boxWidth, boxHeight, 4 / zoomLevel);
+    } else {
+      ctx.rect(rectX, rectY, boxWidth, boxHeight);
+    }
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, centerX, centerY);
+    ctx.restore();
+  }
+
+  function exportViewportImage(customFilename?: string) {
+    const canvas = canvasRef.value;
+    if (!canvas || !store.currentImage) return;
+
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = canvas.clientWidth || canvas.width || 800;
+    offCanvas.height = canvas.clientHeight || canvas.height || 600;
+
+    const ctx = offCanvas.getContext('2d');
+    if (!ctx) return;
+
+    // Background fill
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+
+    ctx.save();
+
+    // Zoom, Pan & Rotation transforms
+    ctx.scale(store.zoomLevel, store.zoomLevel);
+    ctx.translate(store.panX / store.zoomLevel, store.panY / store.zoomLevel);
+
+    const img = store.currentImage.imgObject;
+    const rotationDeg = store.rotation;
+    if (img && rotationDeg) {
+      const angleRad = (rotationDeg * Math.PI) / 180;
+      const cx = img.width / 2;
+      const cy = img.height / 2;
+      ctx.translate(cx, cy);
+      ctx.rotate(angleRad);
+      ctx.translate(-cx, -cy);
+    }
+
+    if (img) {
+      ctx.drawImage(img, 0, 0);
+    }
+
+    // Reference line
+    if (store.referenceLine && store.referenceLine.end) {
+      drawLine(ctx, store.referenceLine, '#a855f7', false);
+      const midX = (store.referenceLine.start.x + store.referenceLine.end.x) / 2;
+      const midY = (store.referenceLine.start.y + store.referenceLine.end.y) / 2;
+      const refText = `Ref: ${getLineLength(store.referenceLine)}`;
+      drawLabelBox(ctx, refText, midX, midY, '#a855f7', store.zoomLevel);
+    }
+
+    // Measurement lines & rectangles
+    store.lines.forEach((line, index) => {
+      if (line.end) {
+        const color = getColorForLine(index);
+        drawLine(ctx, line, color, false);
+
+        let midX = (line.start.x + line.end.x) / 2;
+        let midY = (line.start.y + line.end.y) / 2;
+
+        if (line.type === 'rectangle') {
+          const corners = getRectangleCorners(line.start, line.end, line.height || 0);
+          midX = (corners[0].x + corners[2].x) / 2;
+          midY = (corners[0].y + corners[2].y) / 2;
+        }
+
+        const noteStr = line.note ? ` (${line.note})` : '';
+        const prefix = line.type === 'rectangle' ? 'R' : 'L';
+        const labelText = `${prefix}${index + 1}${noteStr}: ${getLineLength(line)}`;
+        drawLabelBox(ctx, labelText, midX, midY, color, store.zoomLevel);
+      }
+    });
+
+    ctx.restore();
+
+    const dataUrl = offCanvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    const baseName = store.currentImage.name ? store.currentImage.name.replace(/\.[^/.]+$/, '') : 'canvas';
+    const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14);
+    link.download = customFilename || `${baseName}_annotated_${timestamp}.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    store.showToast(store.t('exportSuccessToast'), 'info');
+  }
+
   return {
     getCanvasCoordinates,
     calculateLineLength,
@@ -373,9 +494,11 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     getColorForLine,
     LINE_COLORS,
     updateCanvas,
+    exportViewportImage,
     getDistanceToSegment,
     getDistanceToRectangle,
     getRectangleCorners
   };
 }
+
 
