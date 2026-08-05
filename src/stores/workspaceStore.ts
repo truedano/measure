@@ -390,11 +390,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
           const pxLength = Math.sqrt(dx * dx + dy * dy);
           let lengthStr = '';
           if (line.type === 'rectangle') {
-            const pxHeight = Math.abs(line.height || 0);
             if (img.scale !== 1) {
-              lengthStr = `${(pxLength * img.scale).toFixed(2)} × ${(pxHeight * img.scale).toFixed(2)} ${img.unit}`;
+              lengthStr = `${(pxLength * img.scale).toFixed(2)} ${img.unit}`;
             } else {
-              lengthStr = `${pxLength.toFixed(2)} × ${pxHeight.toFixed(2)} px`;
+              lengthStr = `${pxLength.toFixed(2)} px`;
             }
           } else {
             lengthStr = img.scale !== 1 

@@ -53,6 +53,12 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
 
   function getLineLength(line: Line): string {
     if (!line.start || !line.end) return '0 px';
+    if (line.type === 'rectangle') {
+      const pxLength = calculateLineLength(line);
+      return store.scale !== 1
+        ? `${(pxLength * store.scale).toFixed(2)} ${store.unit}`
+        : `${pxLength.toFixed(2)} px`;
+    }
     const length = calculateLineLength(line);
     return store.scale !== 1 
       ? `${(length * store.scale).toFixed(2)} ${store.unit}` 

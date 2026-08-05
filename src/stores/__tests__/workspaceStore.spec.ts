@@ -305,6 +305,6 @@ describe('useWorkspaceStore', () => {
 
     expect(store.tableData.length).toBe(1);
     expect(store.tableData[0].lineId).toBe('Rect 1');
-    expect(store.tableData[0].lengthStr).toBe('40.00 × 30.00 px');
+    expect(store.tableData[0].lengthStr).toBe('40.00 px');
   });
 });
