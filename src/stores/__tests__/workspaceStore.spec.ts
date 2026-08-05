@@ -108,6 +108,8 @@ describe('useWorkspaceStore', () => {
 
   it('computes tableData correctly for drawing lines', () => {
     const store = useWorkspaceStore();
+    // Ensure unit display is ON (default)
+    store.showTableUnit = true;
     const mockImg: any = {
       id: 'img-1',
       name: 'test.png',
@@ -140,6 +142,47 @@ describe('useWorkspaceStore', () => {
 
     // Test scaling formatting in tableData
     store.images[0].scale = 2; // 50px * 2 = 100mm
+    expect(store.tableData[0].lengthStr).toBe('100.00 mm');
+  });
+
+  it('showTableUnit toggle hides/shows unit suffix in tableData', () => {
+    const store = useWorkspaceStore();
+    const mockImg: any = {
+      id: 'img-unit',
+      name: 'unit.png',
+      src: '',
+      imgObject: null,
+      lines: [
+        {
+          start: { x: 0, y: 0 },
+          end: { x: 30, y: 40 }, // 50px
+          handles: [],
+          note: ''
+        }
+      ],
+      referenceLine: null,
+      referenceLength: 0,
+      unit: 'mm',
+      scale: 2,
+      dpi: '',
+      zoomLevel: 1,
+      panX: 0,
+      panY: 0
+    };
+    store.images.push(mockImg);
+
+    // With unit shown (default=true): should include unit suffix
+    store.showTableUnit = true;
+    expect(store.tableData[0].lengthStr).toBe('100.00 mm');
+
+    // After toggle to hidden: suffix removed
+    store.toggleTableUnit();
+    expect(store.showTableUnit).toBe(false);
+    expect(store.tableData[0].lengthStr).toBe('100.00');
+
+    // Toggle back: unit restored
+    store.toggleTableUnit();
+    expect(store.showTableUnit).toBe(true);
     expect(store.tableData[0].lengthStr).toBe('100.00 mm');
   });
 

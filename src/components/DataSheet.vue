@@ -25,6 +25,18 @@
           <option v-for="f in store.folders" :key="f.id" :value="f.id">{{ f.name }}</option>
         </select>
       </div>
+      <button
+        class="unit-toggle-btn"
+        :class="{ active: store.showTableUnit }"
+        @click="store.toggleTableUnit()"
+        :title="store.showTableUnit ? store.t('hideUnit') : store.t('showUnit')"
+      >
+        <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M3 7h18M3 12h18M3 17h10" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="14" y="18" font-size="7" fill="currentColor" stroke="none" font-family="monospace" font-weight="bold">mm</text>
+        </svg>
+        <span>{{ store.showTableUnit ? store.t('hideUnit') : store.t('showUnit') }}</span>
+      </button>
       <div class="panel-actions">
         <button 
           @click="copyTableData" 
@@ -289,6 +301,34 @@ function copyTableData() {
 .panel-actions {
   display: flex;
   gap: 10px;
+}
+
+.unit-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #252525;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #888;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+.unit-toggle-btn:hover {
+  border-color: #00f0ff;
+  color: #ccc;
+}
+
+.unit-toggle-btn.active {
+  border-color: #00f0ff;
+  color: #00f0ff;
+  background: rgba(0, 240, 255, 0.06);
 }
 
 .action-btn {

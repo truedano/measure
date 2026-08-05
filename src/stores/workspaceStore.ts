@@ -69,6 +69,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       noLinesDrawnTable: '尚未繪製測量線。請載入圖片並新增線段。',
       copySuccessToast: '測量長度已複製到剪貼簿！',
       copyErrorToast: '複製到剪貼簿失敗，請重試。',
+      showUnit: '顯示單位',
+      hideUnit: '隱藏單位',
 
       // ConfirmModal & Toast
       cancel: '取消',
@@ -160,6 +162,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       noLinesDrawnTable: 'No measurement lines drawn yet. Load images and add lines.',
       copySuccessToast: 'Measurement lengths copied to clipboard!',
       copyErrorToast: 'Failed to copy to clipboard. Please try again.',
+      showUnit: 'Show Unit',
+      hideUnit: 'Hide Unit',
 
       // ConfirmModal & Toast
       cancel: 'Cancel',
@@ -188,6 +192,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const folders = ref<Folder[]>([]);
   const mousePos = ref<Point | null>(null);
   const selectedFolderFilter = ref<string>('all');
+  const showTableUnit = ref<boolean>(localStorage.getItem('measure_show_table_unit') !== 'false');
+
+  function toggleTableUnit() {
+    showTableUnit.value = !showTableUnit.value;
+    localStorage.setItem('measure_show_table_unit', showTableUnit.value.toString());
+  }
   
   const language = ref<'zh' | 'en'>((localStorage.getItem('measure_lang') as 'zh' | 'en') || 'zh');
 
@@ -389,16 +399,23 @@ export const useWorkspaceStore = defineStore('workspace', () => {
           const dy = line.end.y - line.start.y;
           const pxLength = Math.sqrt(dx * dx + dy * dy);
           let lengthStr = '';
+          const withUnit = showTableUnit.value;
           if (line.type === 'rectangle') {
             if (img.scale !== 1) {
-              lengthStr = `${(pxLength * img.scale).toFixed(2)} ${img.unit}`;
+              lengthStr = withUnit
+                ? `${(pxLength * img.scale).toFixed(2)} ${img.unit}`
+                : `${(pxLength * img.scale).toFixed(2)}`;
             } else {
-              lengthStr = `${pxLength.toFixed(2)} px`;
+              lengthStr = withUnit ? `${pxLength.toFixed(2)} px` : `${pxLength.toFixed(2)}`;
             }
           } else {
-            lengthStr = img.scale !== 1 
-              ? `${(pxLength * img.scale).toFixed(2)} ${img.unit}` 
-              : `${pxLength.toFixed(2)} px`;
+            if (img.scale !== 1) {
+              lengthStr = withUnit
+                ? `${(pxLength * img.scale).toFixed(2)} ${img.unit}`
+                : `${(pxLength * img.scale).toFixed(2)}`;
+            } else {
+              lengthStr = withUnit ? `${pxLength.toFixed(2)} px` : `${pxLength.toFixed(2)}`;
+            }
           }
           
           data.push({
@@ -664,6 +681,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     folders,
     mousePos,
     selectedFolderFilter,
+    showTableUnit,
+    toggleTableUnit,
     language,
     setLanguage,
     defaultReferenceLength,
