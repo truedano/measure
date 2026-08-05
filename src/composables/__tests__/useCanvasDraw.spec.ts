@@ -181,5 +181,30 @@ describe('useCanvasDraw', () => {
     // Point directly on segment
     expect(getDistanceToSegment({ x: 7, y: 0 }, p1, p2)).toBeCloseTo(0, 4);
   });
+
+  it('supports custom color for lines and rectangles and falls back to default palette', () => {
+    const canvasRef = ref<HTMLCanvasElement | null>(null);
+    const { getColorForLine, LINE_COLORS } = useCanvasDraw(canvasRef);
+
+    const defaultLine = {
+      start: { x: 0, y: 0 },
+      end: { x: 10, y: 10 },
+      handles: [],
+      type: 'line' as const
+    };
+
+    const customLine = {
+      start: { x: 0, y: 0 },
+      end: { x: 10, y: 10 },
+      handles: [],
+      type: 'rectangle' as const,
+      color: '#ff00ff'
+    };
+
+    expect(getColorForLine(0, defaultLine)).toBe(LINE_COLORS[0]);
+    expect(getColorForLine(1, defaultLine)).toBe(LINE_COLORS[1]);
+    expect(getColorForLine(0, customLine)).toBe('#ff00ff');
+    expect(getColorForLine(3, customLine)).toBe('#ff00ff');
+  });
 });
 

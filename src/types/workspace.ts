@@ -10,6 +10,7 @@ export interface Line {
   handles: Point[];
   type?: 'line' | 'rectangle';
   height?: number; // Distance/width perpendicular to start-end vector for rectangle
+  color?: string; // Configurable stroke/fill color
 }
 
 export interface Folder {

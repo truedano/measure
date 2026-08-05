@@ -58,8 +58,8 @@
           :style="[
             getHandleStyle(handle),
             {
-              backgroundColor: store.hoveredLineIndex === index ? getColorForLine(index) : 'rgba(0, 240, 255, 0.5)',
-              boxShadow: store.hoveredLineIndex === index ? `0 0 8px ${getColorForLine(index)}` : '0 0 6px rgba(0, 240, 255, 0.8)'
+              backgroundColor: store.hoveredLineIndex === index ? getColorForLine(index, line) : 'rgba(0, 240, 255, 0.5)',
+              boxShadow: store.hoveredLineIndex === index ? `0 0 8px ${getColorForLine(index, line)}` : '0 0 6px rgba(0, 240, 255, 0.8)'
             }
           ]"
           @mousedown="startDraggingHandle($event, line, handleIndex + 1)"
@@ -95,8 +95,8 @@
           :style="[
             getLineCenterStyle(line),
             {
-              backgroundColor: getColorForLine(index),
-              boxShadow: `0 0 8px ${getColorForLine(index)}`
+              backgroundColor: getColorForLine(index, line),
+              boxShadow: `0 0 8px ${getColorForLine(index, line)}`
             }
           ]"
           @click.stop="store.lines.splice(index, 1); store.hoveredLineIndex = null; isHoveringOverlay = false; store.requestCanvasUpdate()"
@@ -215,20 +215,27 @@
                 class="measure-item"
                 :class="{ 'is-hovered': store.hoveredLineIndex === index }"
                 :style="{ 
-                  borderColor: store.hoveredLineIndex === index ? getColorForLine(index) : 'rgba(255, 255, 255, 0.06)',
-                  boxShadow: store.hoveredLineIndex === index ? `0 0 6px ${getColorForLine(index)}40` : 'none'
+                  borderColor: store.hoveredLineIndex === index ? getColorForLine(index, line) : 'rgba(255, 255, 255, 0.06)',
+                  boxShadow: store.hoveredLineIndex === index ? `0 0 6px ${getColorForLine(index, line)}40` : 'none'
                 }"
                 @mouseenter="store.hoveredLineIndex = index; store.requestCanvasUpdate()"
                 @mouseleave="store.hoveredLineIndex = null; store.requestCanvasUpdate()"
               >
                 <span 
                   class="measure-label" 
-                  :style="{ color: getColorForLine(index) }"
-                  :title="line.note ? `L${index + 1} (${line.note})` : `L${index + 1}`"
+                  :style="{ color: getColorForLine(index, line) }"
+                  :title="line.note ? `${line.type === 'rectangle' ? 'R' : 'L'}${index + 1} (${line.note})` : `${line.type === 'rectangle' ? 'R' : 'L'}${index + 1}`"
                 >
-                  L{{ index + 1 }}{{ line.note ? ` (${line.note})` : '' }}
+                  {{ line.type === 'rectangle' ? 'R' : 'L' }}{{ index + 1 }}{{ line.note ? ` (${line.note})` : '' }}
                 </span>
                 <span class="measure-val">{{ getLineLength(line) }}</span>
+                <input 
+                  type="color" 
+                  :value="line.color || getColorForLine(index, line)"
+                  @input="(e: Event) => onColorInput(line, (e.target as HTMLInputElement).value)"
+                  class="line-color-picker"
+                  :title="store.t('changeColorTooltip')"
+                />
                 <button class="delete-btn" @click="store.lines.splice(index, 1); store.requestCanvasUpdate()" :title="store.t('deleteLineTooltip')">
                   <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -277,6 +284,11 @@ const dragStartLinePoints = ref<{ start: Point; end: Point } | null>(null);
 const draggingLineRef = ref<Line | null>(null);
 const isPanelCollapsed = ref(false);
 const isHoveringOverlay = ref(false);
+
+function onColorInput(line: Line, color: string) {
+  line.color = color;
+  store.requestCanvasUpdate();
+}
 
 // Composables
 const { getCanvasCoordinates, getLineLength, getColorForLine, updateCanvas, exportViewportImage, getDistanceToSegment, getDistanceToRectangle } = useCanvasDraw(canvasRef);
@@ -1299,5 +1311,43 @@ function snapToAngle(startX: number, startY: number, x: number, y: number) {
 .drawing-tooltip.reference-tooltip {
   border-color: rgba(168, 85, 247, 0.5);
   color: #c084fc;
+}
+
+.line-color-picker {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  outline: none;
+  margin-left: auto;
+  margin-right: 4px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+}
+
+.line-color-picker:hover {
+  transform: scale(1.2);
+  border-color: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+}
+
+.line-color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.line-color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+
+.line-color-picker::-moz-color-swatch {
+  border: none;
+  border-radius: 50%;
 }
 </style>

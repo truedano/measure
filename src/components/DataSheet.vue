@@ -46,6 +46,7 @@
           <tr>
             <th>{{ store.t('imageNameCol') }}</th>
             <th>{{ store.t('lineIdCol') }}</th>
+            <th style="width: 48px; text-align: center;">{{ store.t('colorCol') }}</th>
             <th>{{ store.t('lengthCol') }}</th>
             <th>{{ store.t('noteCol') }}</th>
           </tr>
@@ -61,6 +62,15 @@
           >
             <td class="cell-filename" :title="row.imageName">{{ row.imageName }}</td>
             <td>{{ row.lineId }}</td>
+            <td style="text-align: center;">
+              <input 
+                type="color" 
+                :value="row.line.color || getColorForLine(row.lineIndex, row.line)" 
+                @input="(e: Event) => { row.line.color = (e.target as HTMLInputElement).value; store.requestCanvasUpdate(); }"
+                class="table-color-picker"
+                :title="store.t('changeColorTooltip')"
+              >
+            </td>
             <td class="cell-length">{{ row.lengthStr }}</td>
             <td class="cell-note">
               <input 
@@ -73,7 +83,7 @@
             </td>
           </tr>
           <tr v-if="store.tableData.length === 0">
-            <td colspan="4" class="empty-row">
+            <td colspan="5" class="empty-row">
               {{ store.t('noLinesDrawnTable') }}
             </td>
           </tr>
@@ -86,8 +96,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useWorkspaceStore } from '../stores/workspaceStore';
+import { useCanvasDraw } from '../composables/useCanvasDraw';
 
 const store = useWorkspaceStore();
+const { getColorForLine } = useCanvasDraw({ value: null });
 
 const isDragging = ref(false);
 let startY = 0;
@@ -424,5 +436,42 @@ function copyTableData() {
   height: 14px;
   stroke-width: 2.2;
   flex-shrink: 0;
+}
+
+.table-color-picker {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  outline: none;
+  vertical-align: middle;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+}
+
+.table-color-picker:hover {
+  transform: scale(1.2);
+  border-color: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+}
+
+.table-color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.table-color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+
+.table-color-picker::-moz-color-swatch {
+  border: none;
+  border-radius: 50%;
 }
 </style>

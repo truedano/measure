@@ -13,7 +13,8 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     '#3b82f6'  // Neon Blue
   ];
 
-  function getColorForLine(index: number): string {
+  function getColorForLine(index: number, line?: Line): string {
+    if (line && line.color) return line.color;
     return LINE_COLORS[index % LINE_COLORS.length];
   }
 
@@ -304,7 +305,7 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
       // Draw measurement lines with distinct colors and hover highlighting
       store.lines.forEach((line, index) => {
         if (line.end) {
-          const color = getColorForLine(index);
+          const color = getColorForLine(index, line);
           const isHovered = store.hoveredLineIndex === index;
           drawLine(ctx, line, color, isHovered);
         }
@@ -453,7 +454,7 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     // Measurement lines & rectangles
     store.lines.forEach((line, index) => {
       if (line.end) {
-        const color = getColorForLine(index);
+        const color = getColorForLine(index, line);
         drawLine(ctx, line, color, false);
 
         let midX = (line.start.x + line.end.x) / 2;
