@@ -379,9 +379,16 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
     centerX: number,
     centerY: number,
     color: string,
-    zoomLevel: number
+    zoomLevel: number,
+    rotationRad = 0
   ) {
     ctx.save();
+    // 反轉旋轉使標籤永遠水平顯示
+    if (rotationRad !== 0) {
+      ctx.translate(centerX, centerY);
+      ctx.rotate(-rotationRad);
+      ctx.translate(-centerX, -centerY);
+    }
     const fontSize = 12 / zoomLevel;
     ctx.font = `bold ${fontSize}px Outfit, Inter, sans-serif`;
     const textWidth = ctx.measureText(text).width;
@@ -435,12 +442,12 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
 
     const img = store.currentImage.imgObject;
     const rotationDeg = store.rotation;
+    const exportAngleRad = rotationDeg ? (rotationDeg * Math.PI) / 180 : 0;
     if (img && rotationDeg) {
-      const angleRad = (rotationDeg * Math.PI) / 180;
       const cx = img.width / 2;
       const cy = img.height / 2;
       ctx.translate(cx, cy);
-      ctx.rotate(angleRad);
+      ctx.rotate(exportAngleRad);
       ctx.translate(-cx, -cy);
     }
 
@@ -454,7 +461,7 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
       const midX = (store.referenceLine.start.x + store.referenceLine.end.x) / 2;
       const midY = (store.referenceLine.start.y + store.referenceLine.end.y) / 2;
       const refText = `Ref: ${getLineLength(store.referenceLine)}`;
-      drawLabelBox(ctx, refText, midX, midY, '#a855f7', store.zoomLevel);
+      drawLabelBox(ctx, refText, midX, midY, '#a855f7', store.zoomLevel, exportAngleRad);
     }
 
     // Measurement lines & rectangles
@@ -475,7 +482,7 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
         const noteStr = line.note ? ` (${line.note})` : '';
         const prefix = line.type === 'rectangle' ? 'R' : 'L';
         const labelText = `${prefix}${index + 1}${noteStr}: ${getLineLength(line)}`;
-        drawLabelBox(ctx, labelText, midX, midY, color, store.zoomLevel);
+        drawLabelBox(ctx, labelText, midX, midY, color, store.zoomLevel, exportAngleRad);
       }
     });
 
