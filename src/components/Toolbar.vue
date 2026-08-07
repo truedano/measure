@@ -184,6 +184,23 @@
               </select>
             </div>
           </div>
+          <div class="settings-row">
+            <span class="settings-label" :title="store.t('lengthPrecisionTooltip')">{{ store.t('lengthPrecision') }}</span>
+            <div class="settings-input-group">
+              <select
+                :value="store.lengthPrecision"
+                @change="onPrecisionChange"
+                class="settings-select"
+                :title="store.t('lengthPrecisionTooltip')"
+              >
+                <option :value="0">0 位 (123)</option>
+                <option :value="1">1 位 (123.4)</option>
+                <option :value="2">2 位 (123.45)</option>
+                <option :value="3">3 位 (123.456)</option>
+                <option :value="4">4 位 (123.4567)</option>
+              </select>
+            </div>
+          </div>
         </div>
 
 
@@ -314,6 +331,11 @@ onUnmounted(() => {
 function changeLanguage(event: Event) {
   const target = event.target as HTMLSelectElement;
   store.setLanguage(target.value as 'zh' | 'en');
+}
+
+function onPrecisionChange(event: Event) {
+  const target = event.target as HTMLSelectElement;
+  store.setLengthPrecision(Number(target.value));
 }
 
 function triggerResetAll() {

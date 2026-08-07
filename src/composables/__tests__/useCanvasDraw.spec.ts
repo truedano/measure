@@ -52,13 +52,17 @@ describe('useCanvasDraw', () => {
       handles: []
     };
 
-    // Scale = 1 (pixel mode)
+    // Default lengthPrecision = 3
     store.scale = 1;
-    expect(getLineLength(mockLine)).toBe('50.00 px');
+    expect(getLineLength(mockLine)).toBe('50.000 px');
 
     // Scale = 0.1, unit = cm
     store.scale = 0.1;
     store.unit = 'cm';
+    expect(getLineLength(mockLine)).toBe('5.000 cm');
+
+    // Set lengthPrecision = 2
+    store.setLengthPrecision(2);
     expect(getLineLength(mockLine)).toBe('5.00 cm');
   });
 

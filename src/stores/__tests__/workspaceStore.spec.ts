@@ -135,14 +135,14 @@ describe('useWorkspaceStore', () => {
 
     store.images.push(mockImg);
     expect(store.tableData.length).toBe(1);
-    expect(store.tableData[0].lengthStr).toBe('50.00 px');
+    expect(store.tableData[0].lengthStr).toBe('50.000 px');
     expect(store.tableData[0].lineId).toBe('Line 1');
     expect(store.tableData[0].line.note).toBe('Width');
     expect(store.hasMeasurements).toBe(true);
 
     // Test scaling formatting in tableData
     store.images[0].scale = 2; // 50px * 2 = 100mm
-    expect(store.tableData[0].lengthStr).toBe('100.00 mm');
+    expect(store.tableData[0].lengthStr).toBe('100.000 mm');
   });
 
   it('showTableUnit toggle hides/shows unit suffix in tableData', () => {
@@ -173,17 +173,17 @@ describe('useWorkspaceStore', () => {
 
     // With unit shown (default=true): should include unit suffix
     store.showTableUnit = true;
-    expect(store.tableData[0].lengthStr).toBe('100.00 mm');
+    expect(store.tableData[0].lengthStr).toBe('100.000 mm');
 
     // After toggle to hidden: suffix removed
     store.toggleTableUnit();
     expect(store.showTableUnit).toBe(false);
-    expect(store.tableData[0].lengthStr).toBe('100.00');
+    expect(store.tableData[0].lengthStr).toBe('100.000');
 
     // Toggle back: unit restored
     store.toggleTableUnit();
     expect(store.showTableUnit).toBe(true);
-    expect(store.tableData[0].lengthStr).toBe('100.00 mm');
+    expect(store.tableData[0].lengthStr).toBe('100.000 mm');
   });
 
   it('handles custom Modal prompts and Toast auto-dismisses', () => {
@@ -348,6 +348,21 @@ describe('useWorkspaceStore', () => {
 
     expect(store.tableData.length).toBe(1);
     expect(store.tableData[0].lineId).toBe('Rect 1');
-    expect(store.tableData[0].lengthStr).toBe('40.00 px');
+    expect(store.tableData[0].lengthStr).toBe('40.000 px');
+  });
+
+  it('allows changing length precision via setLengthPrecision', () => {
+    const store = useWorkspaceStore();
+    expect(store.lengthPrecision).toBe(3);
+
+    store.setLengthPrecision(2);
+    expect(store.lengthPrecision).toBe(2);
+
+    store.setLengthPrecision(4);
+    expect(store.lengthPrecision).toBe(4);
+
+    // Out of bounds values should be ignored
+    store.setLengthPrecision(10);
+    expect(store.lengthPrecision).toBe(4);
   });
 });

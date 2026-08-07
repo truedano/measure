@@ -53,16 +53,17 @@ export function useCanvasDraw(canvasRef: { value: HTMLCanvasElement | null }) {
 
   function getLineLength(line: Line): string {
     if (!line.start || !line.end) return '0 px';
+    const prec = store.lengthPrecision ?? 3;
     if (line.type === 'rectangle') {
       const pxLength = calculateLineLength(line);
       return store.scale !== 1
-        ? `${(pxLength * store.scale).toFixed(2)} ${store.unit}`
-        : `${pxLength.toFixed(2)} px`;
+        ? `${(pxLength * store.scale).toFixed(prec)} ${store.unit}`
+        : `${pxLength.toFixed(prec)} px`;
     }
     const length = calculateLineLength(line);
     return store.scale !== 1 
-      ? `${(length * store.scale).toFixed(2)} ${store.unit}` 
-      : `${length.toFixed(2)} px`;
+      ? `${(length * store.scale).toFixed(prec)} ${store.unit}` 
+      : `${length.toFixed(prec)} px`;
   }
 
   function drawPerpendicularEnds(ctx: CanvasRenderingContext2D, line: Line, isHovered = false) {

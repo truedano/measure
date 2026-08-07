@@ -90,6 +90,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       defaultReferenceLengthTooltip: '繪製參考線後自動填入的真實長度',
       defaultReferenceUnit: '預設單位',
       defaultReferenceUnitTooltip: '繪製參考線後自動填入的單位',
+      lengthPrecision: '長度小數點位數',
+      lengthPrecisionTooltip: '設定長度數值顯示的小數點位數 (0~4)',
       settingsSavedToast: '設定已儲存。',
       exportImage: '匯出圖片',
       exportTooltip: '將畫布當前視角畫面另存為圖片',
@@ -183,6 +185,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       defaultReferenceLengthTooltip: 'The real length auto-filled after drawing a reference line',
       defaultReferenceUnit: 'Default Unit',
       defaultReferenceUnitTooltip: 'The unit auto-filled after drawing a reference line',
+      lengthPrecision: 'Length Decimals',
+      lengthPrecisionTooltip: 'Set decimal places for length measurements (0-4)',
       settingsSavedToast: 'Settings saved.',
     }
   };
@@ -208,7 +212,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   const DEFAULT_REFERENCE_LENGTH_KEY = 'measure_default_reference_length';
   const DEFAULT_REFERENCE_UNIT_KEY = 'measure_default_reference_unit';
+  const LENGTH_PRECISION_KEY = 'measure_length_precision';
   const FALLBACK_DEFAULT_REFERENCE_LENGTH = 25;
+  const FALLBACK_LENGTH_PRECISION = 3;
   const VALID_UNITS = ['', 'mm', 'cm', 'm', 'in'];
   function loadDefaultReferenceLength(): number {
     const raw = localStorage.getItem(DEFAULT_REFERENCE_LENGTH_KEY);
@@ -219,8 +225,14 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const raw = localStorage.getItem(DEFAULT_REFERENCE_UNIT_KEY);
     return raw !== null && VALID_UNITS.includes(raw) ? raw : 'mm';
   }
+  function loadLengthPrecision(): number {
+    const raw = localStorage.getItem(LENGTH_PRECISION_KEY);
+    const parsed = raw === null ? NaN : parseInt(raw, 10);
+    return Number.isInteger(parsed) && parsed >= 0 && parsed <= 4 ? parsed : FALLBACK_LENGTH_PRECISION;
+  }
   const defaultReferenceLength = ref<number>(loadDefaultReferenceLength());
   const defaultReferenceUnit = ref<string>(loadDefaultReferenceUnit());
+  const lengthPrecision = ref<number>(loadLengthPrecision());
 
   function setDefaultReferenceLength(val: number) {
     if (!Number.isFinite(val) || val <= 0) return;
@@ -232,6 +244,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (!VALID_UNITS.includes(val)) return;
     defaultReferenceUnit.value = val;
     localStorage.setItem(DEFAULT_REFERENCE_UNIT_KEY, val);
+  }
+
+  function setLengthPrecision(val: number) {
+    if (!Number.isInteger(val) || val < 0 || val > 4) return;
+    lengthPrecision.value = val;
+    localStorage.setItem(LENGTH_PRECISION_KEY, val.toString());
+    requestCanvasUpdate();
   }
 
   function t(key: string, args?: Record<string, string | number>): string {
@@ -400,21 +419,22 @@ export const useWorkspaceStore = defineStore('workspace', () => {
           const pxLength = Math.sqrt(dx * dx + dy * dy);
           let lengthStr = '';
           const withUnit = showTableUnit.value;
+          const prec = lengthPrecision.value;
           if (line.type === 'rectangle') {
             if (img.scale !== 1) {
               lengthStr = withUnit
-                ? `${(pxLength * img.scale).toFixed(2)} ${img.unit}`
-                : `${(pxLength * img.scale).toFixed(2)}`;
+                ? `${(pxLength * img.scale).toFixed(prec)} ${img.unit}`
+                : `${(pxLength * img.scale).toFixed(prec)}`;
             } else {
-              lengthStr = withUnit ? `${pxLength.toFixed(2)} px` : `${pxLength.toFixed(2)}`;
+              lengthStr = withUnit ? `${pxLength.toFixed(prec)} px` : `${pxLength.toFixed(prec)}`;
             }
           } else {
             if (img.scale !== 1) {
               lengthStr = withUnit
-                ? `${(pxLength * img.scale).toFixed(2)} ${img.unit}`
-                : `${(pxLength * img.scale).toFixed(2)}`;
+                ? `${(pxLength * img.scale).toFixed(prec)} ${img.unit}`
+                : `${(pxLength * img.scale).toFixed(prec)}`;
             } else {
-              lengthStr = withUnit ? `${pxLength.toFixed(2)} px` : `${pxLength.toFixed(2)}`;
+              lengthStr = withUnit ? `${pxLength.toFixed(prec)} px` : `${pxLength.toFixed(prec)}`;
             }
           }
           
@@ -689,6 +709,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     setDefaultReferenceLength,
     defaultReferenceUnit,
     setDefaultReferenceUnit,
+    lengthPrecision,
+    setLengthPrecision,
     t,
     isAddingLine,
     isAddingRectangle,
